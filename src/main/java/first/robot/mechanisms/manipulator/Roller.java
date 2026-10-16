@@ -19,7 +19,7 @@ public class Roller extends BearMechanism {
     private SystemState systemState = SystemState.IDLE;
 
     public Roller() {
-        super("EXAMPLE", 0, new CANBus("Default Name"));
+        super("Roller", 0, new CANBus("Default Name"));
 
         neutralMode(NeutralModeValue.Brake);
         inverted(InvertedValue.CounterClockwise_Positive);

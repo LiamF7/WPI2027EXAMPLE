@@ -12,7 +12,6 @@ import org.wpilib.command3.Mechanism;
 import org.wpilib.command3.Scheduler;
 import org.wpilib.driverstation.DriverStationDisplay;
 import org.wpilib.driverstation.DriverStationErrors;
-import org.wpilib.framework.RobotBase;
 import org.wpilib.simulation.DCMotorSim;
 import org.wpilib.system.RobotController;
 import org.wpilib.telemetry.Telemetry;
@@ -115,7 +114,7 @@ public class BearMechanism implements Mechanism {
 
     motorConfig = new TalonFXConfiguration();
 
-    Telemetry.getTable(name).log(name + " READY", this.isReady());
+    Telemetry.getTable().log(name + " READY", this.isReady());
 
     motorSupplyCurrent = motor.getSupplyCurrent(false);
     motorStatorCurrent = motor.getStatorCurrent(false);

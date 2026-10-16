@@ -23,7 +23,7 @@ public class Arm extends BearMechanism {
     private SystemState systemState = SystemState.HOME;
 
     public Arm() {
-        super("EXAMPLE2", 2, new CANBus("Default Name"));
+        super("Arm", 2, new CANBus("Default Name"));
 
         neutralMode(NeutralModeValue.Brake);
         inverted(InvertedValue.Clockwise_Positive);
