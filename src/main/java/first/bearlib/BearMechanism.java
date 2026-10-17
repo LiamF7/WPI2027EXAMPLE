@@ -236,8 +236,8 @@ public class BearMechanism implements Mechanism {
    * 
    * @param staticFeedForwardSignValue the feed forward sign
    */
-  public void staticFeedForwardSign(StaticFeedforwardSignValue staticFeedforwardSignValue){
-    motorConfig.Slot0.StaticFeedforwardSign = staticFeedforwardSignValue;
+  public void staticFeedForwardSign(StaticFeedforwardSignValue staticFeedForwardSignValue){
+    motorConfig.Slot0.StaticFeedforwardSign = staticFeedForwardSignValue;
   }
 
   /**

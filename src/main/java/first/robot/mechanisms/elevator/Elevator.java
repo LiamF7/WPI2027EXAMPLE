@@ -1,4 +1,4 @@
-package first.robot.mechanisms.manipulator.elevator;
+package first.robot.mechanisms.elevator;
 
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.signals.GravityTypeValue;

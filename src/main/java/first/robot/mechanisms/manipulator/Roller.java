@@ -7,6 +7,9 @@ import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
 import first.bearlib.BearMechanism;
+import first.bearlib.statemachine.BearState;
+import first.bearlib.statemachine.State;
+import first.robot.Pilot;
 
 public class Roller extends BearMechanism {
 
@@ -14,9 +17,13 @@ public class Roller extends BearMechanism {
 
     private final double PIECE_THRESHOLD = Amps.of(3.879).in(Amps);
 
-    private WantedState wantedState = WantedState.STOP;
+    private final BearState state = new BearState();
 
-    private SystemState systemState = SystemState.IDLE;
+    public final State RUN;
+
+    public final State HOLD;
+    
+    public final State REVERSE;
 
     public Roller() {
         super("Roller", 0, new CANBus("Default Name"));
@@ -28,89 +35,29 @@ public class Roller extends BearMechanism {
         kI(0);
         kD(0);
 
+        RUN = new State("RUN", runVTCFOC(1000)).withEnd(this::hasPiece);
+
+        HOLD = new State("HOLD", stop());
+
+        REVERSE = new State("REVERSE", runVTCFOC(-1000));
+
+        HOLD.to(RUN).when(Pilot.intake()::getAsBoolean);
+
+        RUN.to(HOLD).onEnd();
+
+        HOLD.to(REVERSE).when(Pilot.score()::getAsBoolean);
+
+        REVERSE.to(HOLD).when(() -> !hasPiece());
+
         addConfig();
+        state.configure(HOLD, RUN, REVERSE);
     }
 
-    @Override
-    public void periodic(){
-        super.periodic();
-
-        systemState = handleStateTransitions();
-        applyStates();
-    }
-
-    public enum WantedState{
-        RUN,
-        STOP,
-        REVERSE,
-    }
-
-    private enum SystemState{
-        FORWARD,
-        REVERSE,
-        BRAKE,
-        IDLE,
-    }
-
-    private SystemState handleStateTransitions(){
-        return switch(wantedState){
-            case STOP: {
-                if (hasPiece()){
-                    yield SystemState.BRAKE;
-                }
-                yield SystemState.IDLE;
-            }
-            case RUN : {
-                yield SystemState.FORWARD;
-            }
-            case REVERSE: {
-                yield SystemState.REVERSE;
-            }
-        };
-    }
-
-    private void applyStates(){
-        double rpm;
-        boolean brake;
-
-        switch (systemState) {
-            case BRAKE:
-                brake = true;
-                rpm = 0.0;                
-                break;
-            case IDLE:
-                brake = false;
-                rpm = 0.0;
-                break;
-            case FORWARD:
-                brake = false;
-                rpm = 1000;
-                break;
-            case REVERSE:
-                brake = false;
-                rpm = -1000;
-                break;
-            default:
-                brake = false;
-                rpm = 0.0;
-                break;
-        }
-        if(brake){
-            setBrake();
-            return;
-        }
-        setVTCFOC(rpm);    
-    }
-
-    public void setState(WantedState wantedState){
-        this.wantedState = wantedState;
-    }
-
-    public boolean hasPiece(){
+    public boolean hasPiece() {
         return getSupplyCurrent() >= PIECE_THRESHOLD;
     }
 
-    public boolean isStopped(){
+    public boolean isStopped() {
         return Math.abs(getVelocity()) < 0.5;
     }
 }
