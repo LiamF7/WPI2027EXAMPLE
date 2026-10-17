@@ -3,6 +3,7 @@ package first.robot.mechanisms.manipulator;
 import static org.wpilib.units.Units.Degrees;
 import static org.wpilib.units.Units.Rotations;
 
+import org.wpilib.command3.Command;
 import org.wpilib.units.measure.Angle;
 
 import com.ctre.phoenix6.CANBus;
@@ -11,6 +12,9 @@ import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
 import first.bearlib.BearMechanism;
+import first.bearlib.statemachine.BearState;
+import first.bearlib.statemachine.State;
+import lombok.Getter;
 
 public class Arm extends BearMechanism {
 
@@ -18,9 +22,27 @@ public class Arm extends BearMechanism {
 
     private final double TOLERANCE = Degrees.of(5).in(Degrees);
 
-    private WantedState wantedState = WantedState.HOME;
+    @Getter private final BearState state = new BearState();
 
-    private SystemState systemState = SystemState.HOME;
+    public final State HOME;
+
+    public final State IDLE;
+
+    public final State FORWARD;
+    
+    public final State BACK;
+
+    private enum Setpoint {
+        HOME(Rotations.of(0.0)),
+        FORWARD(Rotations.of(-.25)),
+        BACK(Rotations.of(.25));
+
+        public final Angle angle;
+
+        private Setpoint(Angle angle) {
+            this.angle = angle;
+        }
+    }
 
     public Arm() {
         super("Arm", 2, new CANBus("Default Name"));
@@ -37,75 +59,22 @@ public class Arm extends BearMechanism {
         gravityType(GravityTypeValue.Arm_Cosine);
         gravityArmPositionOffset(0.25);
 
+        HOME = new State("HOME", goToSetpoint(Setpoint.HOME)).withEnd(this::isAtHome);
+
+        IDLE = new State("IDLE", brake());
+
+        FORWARD = new State("FORWARD", goToSetpoint(Setpoint.FORWARD));
+
+        BACK = new State("BACK", goToSetpoint(Setpoint.BACK));
+
+        HOME.to(IDLE).onEnd();
+
         addConfig();
+        state.configure(IDLE, HOME, FORWARD, BACK);
     }
 
-    @Override
-    public void periodic() {
-        super.periodic();
-
-        systemState = handleStateTransitions();
-        applyStates();
-    }
-
-    private enum Setpoint {
-        // arm setpoint
-        HOME(Rotations.of(0.0)),
-        FORWARD(Rotations.of(-.25)),
-        BACK(Rotations.of(.25));
-
-        public final Angle angle;
-
-        private Setpoint(Angle angle) {
-            this.angle = angle;
-        }
-    }
-
-    public enum WantedState {
-        HOME,
-        FORWARD,
-        BACK,
-    }
-
-    private enum SystemState {
-        HOME,
-        HOMING,
-        FORWARD,
-        BACK,
-    }
-
-    private SystemState handleStateTransitions() {
-        return switch (wantedState) {
-            case HOME: {
-                if (isAtHome()) {
-                    yield SystemState.HOME;
-                }
-                yield SystemState.HOMING;
-            }
-            case FORWARD: {
-                yield SystemState.FORWARD;
-            }
-            case BACK: {
-                yield SystemState.BACK;
-            }
-        };
-    }
-
-    private void applyStates() {
-        switch (systemState) {
-            case HOME -> setBrake();
-            case HOMING -> runTo(Setpoint.HOME);
-            case FORWARD -> runTo(Setpoint.FORWARD);
-            case BACK -> runTo(Setpoint.BACK);
-        }
-    }
-
-    public void setState(WantedState wantedState) {
-        this.wantedState = wantedState;
-    }
-
-    private void runTo(Setpoint setpoint) {
-        setPV(setpoint.angle.in(Rotations));
+    private Command goToSetpoint(Setpoint setpoint) {
+        return runPV(setpoint.angle.in(Rotations));
     }
 
     public boolean isAtHome() {

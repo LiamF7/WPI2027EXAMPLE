@@ -236,8 +236,8 @@ public class BearMechanism implements Mechanism {
    * 
    * @param staticFeedForwardSignValue the feed forward sign
    */
-  public void staticFeedForwardSign(StaticFeedforwardSignValue staticFeedforwardSignValue){
-    motorConfig.Slot0.StaticFeedforwardSign = staticFeedforwardSignValue;
+  public void staticFeedForwardSign(StaticFeedforwardSignValue staticFeedForwardSignValue){
+    motorConfig.Slot0.StaticFeedforwardSign = staticFeedForwardSignValue;
   }
 
   /**
@@ -479,6 +479,22 @@ public class BearMechanism implements Mechanism {
   /** Applies config to motor. */
   public void addConfig() {
     PhoenixUtil.applyConfig(() -> motor.getConfigurator().apply(motorConfig), getName());
+  }
+
+  /**
+   * Applies a prexisting config to the motor.
+   * 
+   * @param config The prexisting config.
+   */
+  public void cloneConfig(TalonFXConfiguration config) {
+    PhoenixUtil.applyConfig(()-> motor.getConfigurator().apply(config), getName());
+  }
+
+  /**
+   * The {@link TalonFXConfiguration} of the motor.
+   */
+  public TalonFXConfiguration getConfig(){
+    return motorConfig;
   }
 
   /* LOGGED VALUES */
