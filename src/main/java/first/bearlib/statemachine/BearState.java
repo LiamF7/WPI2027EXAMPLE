@@ -63,7 +63,14 @@ public class BearState {
     /**
      * Sets the current state of the state machine.
      */
-    public Command setState(State state) {
+    public void setState(State state){
+        this.currentState = state;
+    }
+
+    /**
+     * Sets the current state of the state machine, runs as a Command.
+     */
+    public Command setStateCommand(State state) {
         return Command.noRequirements(co -> {
             currentState = state;
         }).named("SET STATE " + state.name().toUpperCase());

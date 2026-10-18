@@ -9,7 +9,7 @@ import com.ctre.phoenix6.signals.NeutralModeValue;
 import first.bearlib.BearMechanism;
 import first.bearlib.statemachine.BearState;
 import first.bearlib.statemachine.State;
-import first.robot.Pilot;
+import lombok.Getter;
 
 public class Roller extends BearMechanism {
 
@@ -17,12 +17,12 @@ public class Roller extends BearMechanism {
 
     private final double PIECE_THRESHOLD = Amps.of(3.879).in(Amps);
 
-    private final BearState state = new BearState();
+    @Getter private final BearState state = new BearState();
 
     public final State RUN;
 
     public final State HOLD;
-    
+
     public final State REVERSE;
 
     public Roller() {
@@ -39,15 +39,11 @@ public class Roller extends BearMechanism {
 
         HOLD = new State("HOLD", stop());
 
-        REVERSE = new State("REVERSE", runVTCFOC(-1000));
-
-        HOLD.to(RUN).when(Pilot.intake()::getAsBoolean);
+        REVERSE = new State("REVERSE", runVTCFOC(-1000)).withEnd(() -> !hasPiece());
 
         RUN.to(HOLD).onEnd();
 
-        HOLD.to(REVERSE).when(Pilot.score()::getAsBoolean);
-
-        REVERSE.to(HOLD).when(() -> !hasPiece());
+        REVERSE.to(HOLD).onEnd();
 
         addConfig();
         state.configure(HOLD, RUN, REVERSE);

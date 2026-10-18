@@ -14,7 +14,7 @@ import com.ctre.phoenix6.signals.NeutralModeValue;
 import first.bearlib.BearMechanism;
 import first.bearlib.statemachine.BearState;
 import first.bearlib.statemachine.State;
-import first.robot.Pilot;
+import lombok.Getter;
 
 public class Arm extends BearMechanism {
 
@@ -22,9 +22,9 @@ public class Arm extends BearMechanism {
 
     private final double TOLERANCE = Degrees.of(5).in(Degrees);
 
-    private final BearState state = new BearState();
+    @Getter private final BearState state = new BearState();
 
-    public final State HOMING;
+    public final State HOME;
 
     public final State IDLE;
 
@@ -59,7 +59,7 @@ public class Arm extends BearMechanism {
         gravityType(GravityTypeValue.Arm_Cosine);
         gravityArmPositionOffset(0.25);
 
-        HOMING = new State("HOMING", goToSetpoint(Setpoint.HOME)).withEnd(this::isAtHome);
+        HOME = new State("HOME", goToSetpoint(Setpoint.HOME)).withEnd(this::isAtHome);
 
         IDLE = new State("IDLE", brake());
 
@@ -67,18 +67,10 @@ public class Arm extends BearMechanism {
 
         BACK = new State("BACK", goToSetpoint(Setpoint.BACK));
 
-        IDLE.to(FORWARD).when(Pilot.score()::getAsBoolean);
-
-        IDLE.to(FORWARD).when(Pilot.intake()::getAsBoolean);
-
-        FORWARD.to(HOMING).when(Pilot.score().negate()::getAsBoolean);
-
-        FORWARD.to(HOMING).when(Pilot.intake().negate()::getAsBoolean);
-
-        HOMING.to(IDLE).onEnd();
+        HOME.to(IDLE).onEnd();
 
         addConfig();
-        state.configure(IDLE, HOMING, FORWARD, BACK);
+        state.configure(IDLE, HOME, FORWARD, BACK);
     }
 
     private Command goToSetpoint(Setpoint setpoint) {
