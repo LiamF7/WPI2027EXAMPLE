@@ -8,13 +8,16 @@ import org.wpilib.command3.Trigger;
 import org.wpilib.framework.RobotBase;
 
 /**
- * A base class for a single mechanism state machine utilizing commands v3.
+ * A base class for a state machine utilizing commands v3.
  * States are declared as objects, with the name and action associated with them
  * as parameters.
  * Using the clean {@code state1.to(state2).when(conditon)}notation,
  * transitions in and out of states can be defined. The{@code configure()}method
  * must be run at the end of a constructor in order for proper state
- * machine functionality.
+ * machine functionality. This library allows for fluidity in state machine
+ * construction. Mechanisms can have more autonomy via their own BearState's, or
+ * they can be semi autonomous when grouped into an overall state machine via
+ * setState() w/in another state machine.
  * 
  * @see State
  * @see Transition
@@ -63,7 +66,7 @@ public class BearState {
     /**
      * Sets the current state of the state machine.
      */
-    public void setState(State state){
+    public void setState(State state) {
         this.currentState = state;
     }
 

@@ -481,6 +481,22 @@ public class BearMechanism implements Mechanism {
     PhoenixUtil.applyConfig(() -> motor.getConfigurator().apply(motorConfig), getName());
   }
 
+  /**
+   * Applies a prexisting config to the motor.
+   * 
+   * @param config The prexisting config.
+   */
+  public void cloneConfig(TalonFXConfiguration config) {
+    PhoenixUtil.applyConfig(()-> motor.getConfigurator().apply(config), getName());
+  }
+
+  /**
+   * The {@link TalonFXConfiguration} of the motor.
+   */
+  public TalonFXConfiguration getConfig(){
+    return motorConfig;
+  }
+
   /* LOGGED VALUES */
 
   /**
