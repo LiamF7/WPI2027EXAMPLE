@@ -1,4 +1,4 @@
-package first.bearlib.location;
+package first.bearlib.util;
 
 import org.wpilib.math.geometry.Pose2d;
 import org.wpilib.math.geometry.Rotation2d;
@@ -8,7 +8,7 @@ import org.wpilib.math.geometry.Translation2d;
  * A utility class providing static methods for geometric calculations related to robot positioning
  * and orientation on the field.
  */
-public class LocationHelper {
+public class LocationUtil {
 
   /**
    * Calculates the straight-line distance between two poses on the field.

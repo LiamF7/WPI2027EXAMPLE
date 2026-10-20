@@ -3,6 +3,8 @@ package first.bearlib.util;
 import com.ctre.phoenix6.StatusCode;
 import java.util.function.Supplier;
 
+import org.wpilib.driverstation.DriverStationErrors;
+
 
 public class PhoenixUtil {
 
@@ -19,7 +21,8 @@ public class PhoenixUtil {
       if (status.isOK()) break;
     }
     if (!status.isOK()) {
-      // report \
+      // report
+      DriverStationErrors.reportError("<<< ERROR INSTANTIATING: " + name + " >>>", false);
     }
   }
 }

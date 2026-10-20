@@ -22,16 +22,21 @@ public class Arm extends BearMechanism {
 
     private final double TOLERANCE = Degrees.of(5).in(Degrees);
 
-    @Getter private final BearState state = new BearState();
+    @Getter
+    private final BearState state = new BearState();
 
     public final State HOME;
 
     public final State IDLE;
 
     public final State FORWARD;
-    
+
     public final State BACK;
 
+    /**
+     * Setpoint for the arm, in rotations.
+     * @see {@link rotations}
+     */
     private enum Setpoint {
         HOME(Rotations.of(0.0)),
         FORWARD(Rotations.of(-.25)),
@@ -43,6 +48,8 @@ public class Arm extends BearMechanism {
             this.angle = angle;
         }
     }
+
+    private final double selfTestOutput = Setpoint.FORWARD.angle.in(Degrees); // 5 degrees
 
     public Arm() {
         super("Arm", 2, new CANBus("Default Name"));
@@ -59,28 +66,38 @@ public class Arm extends BearMechanism {
         gravityType(GravityTypeValue.Arm_Cosine);
         gravityArmPositionOffset(0.25);
 
+        // setup state machine
         HOME = new State("HOME", goToSetpoint(Setpoint.HOME)).withEnd(this::isAtHome);
-
         IDLE = new State("IDLE", brake());
-
         FORWARD = new State("FORWARD", goToSetpoint(Setpoint.FORWARD));
-
         BACK = new State("BACK", goToSetpoint(Setpoint.BACK));
-
         HOME.to(IDLE).onEnd();
 
         addConfig();
         state.configure(IDLE, HOME, FORWARD, BACK);
+        selfTestInit(SelfTestableType.POSITION_VOLTAGE, selfTestOutput, selfTestOutput, isOut(), 15.0);
     }
 
+    /**
+     * Runs the arm to a specifc setpoint as a {@link Setpoint}.
+     * 
+     * @param setpoint the specific setpoint.
+     * @return {@link Command}
+     */
     private Command goToSetpoint(Setpoint setpoint) {
         return runPV(setpoint.angle.in(Rotations));
     }
 
+    /**
+     * Signals whether the arm is at the home setpoint.
+     */
     public boolean isAtHome() {
         return Math.abs(getAngle() - Setpoint.HOME.angle.in(Degrees)) <= TOLERANCE;
     }
 
+    /**
+     * Signals whether the arm is at the extended setpoint.
+     */
     public boolean isOut() {
         return Math.abs(getAngle() - Setpoint.FORWARD.angle.in(Degrees)) <= TOLERANCE;
     }

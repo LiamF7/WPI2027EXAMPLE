@@ -31,8 +31,12 @@ public class Transition {
         /**
          * Assigns a transition to execute when the origin ends.
          */
-        public Transition onEnd(){
-           return when(origin.end());
+        public Transition onEnd() {
+            if (origin.end() == null) {
+                throw new IllegalStateException(
+                        "CANNOT INSTANTIATE TRANSITION BECAUSE " + origin.name() + " HAS NO END CONDITION!!!");
+            }
+            return when(origin.end());
         }
     }
 

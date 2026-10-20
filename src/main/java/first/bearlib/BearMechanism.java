@@ -5,6 +5,7 @@ import static org.wpilib.units.Units.Celsius;
 import static org.wpilib.units.Units.Degrees;
 import static org.wpilib.units.Units.RPM;
 import static org.wpilib.units.Units.RotationsPerSecond;
+import static org.wpilib.units.Units.Seconds;
 import static org.wpilib.units.Units.Volts;
 
 import org.wpilib.command3.Command;
@@ -12,6 +13,7 @@ import org.wpilib.command3.Mechanism;
 import org.wpilib.command3.Scheduler;
 import org.wpilib.driverstation.DriverStationDisplay;
 import org.wpilib.driverstation.DriverStationErrors;
+import org.wpilib.networktables.NetworkTableInstance;
 import org.wpilib.simulation.DCMotorSim;
 import org.wpilib.system.RobotController;
 import org.wpilib.telemetry.Telemetry;
@@ -49,11 +51,11 @@ import com.ctre.phoenix6.sim.ChassisReference;
 import com.ctre.phoenix6.sim.TalonFXSimState;
 
 /**
- * Base class for single-motor mechanism. For CTRE hardware, handles telemetry,
- * motor configuration,
- * and simulation.
+ * Team 4068's class for CTRE Kraken X44 or X60 motor mechanism. Offers clean
+ * motor configuration, unified telemetry, fault logging, command factories,
+ * simulstion support, self test support.
  */
-public class BearMechanism implements Mechanism {
+public class BearMechanism implements Mechanism{
 
   private int periodicCount = 0; // used for periodic fault logging
 
@@ -64,6 +66,13 @@ public class BearMechanism implements Mechanism {
   protected CANBus canivore;
 
   protected TalonFXConfiguration motorConfig;
+
+  private SelfTestableType selfTestableType;
+  private double outputFast;
+  private double outputSlow;
+  private boolean selfTestStatus;
+  private double selfTestTimeLimit;
+  private boolean selfTestPassed;
 
   protected final StatusSignal<Current> motorSupplyCurrent;
   protected final StatusSignal<Current> motorStatorCurrent;
@@ -100,7 +109,7 @@ public class BearMechanism implements Mechanism {
   private final CoastOut coast = new CoastOut();
 
   /**
-   * Constructor.
+   * super constructor.
    *
    * @param name     name of the mechanism.
    * @param ID       The CAN ID.
@@ -200,8 +209,6 @@ public class BearMechanism implements Mechanism {
     lastHasFault = hasFault;
   }
 
-  /* CONFIG */
-
   /**
    * Sets and enables the stator current limit for the mechanism.
    *
@@ -227,7 +234,7 @@ public class BearMechanism implements Mechanism {
    * 
    * @param position the horizontal position.
    */
-  public void gravityArmPositionOffset(double position){
+  public void gravityArmPositionOffset(double position) {
     motorConfig.Slot0.GravityArmPositionOffset = position;
   }
 
@@ -236,7 +243,7 @@ public class BearMechanism implements Mechanism {
    * 
    * @param staticFeedForwardSignValue the feed forward sign
    */
-  public void staticFeedForwardSign(StaticFeedforwardSignValue staticFeedForwardSignValue){
+  public void staticFeedForwardSign(StaticFeedforwardSignValue staticFeedForwardSignValue) {
     motorConfig.Slot0.StaticFeedforwardSign = staticFeedForwardSignValue;
   }
 
@@ -487,17 +494,15 @@ public class BearMechanism implements Mechanism {
    * @param config The prexisting config.
    */
   public void cloneConfig(TalonFXConfiguration config) {
-    PhoenixUtil.applyConfig(()-> motor.getConfigurator().apply(config), getName());
+    PhoenixUtil.applyConfig(() -> motor.getConfigurator().apply(config), getName());
   }
 
   /**
    * The {@link TalonFXConfiguration} of the motor.
    */
-  public TalonFXConfiguration getConfig(){
+  public TalonFXConfiguration getConfig() {
     return motorConfig;
   }
-
-  /* LOGGED VALUES */
 
   /**
    * Logs closed loop error for mechanism.
@@ -568,7 +573,7 @@ public class BearMechanism implements Mechanism {
    * @return double, setpoint
    */
   public double getSetpoint() {
-    return setpoint.getValueAsDouble() * 360.0;
+    return setpoint.getValueAsDouble();
   }
 
   protected void optimizeCAN() {
@@ -603,7 +608,7 @@ public class BearMechanism implements Mechanism {
     talonFXSim.Orientation = orientation;
     talonFXSim.setMotorType(TalonFXSimState.MotorType.KrakenX44);
 
-    // setup motor sim model.
+    // TODO: setup motor sim model.
 
     DCMotorSim motorSimModel = new DCMotorSim(null, null, null);
 
@@ -633,7 +638,7 @@ public class BearMechanism implements Mechanism {
     talonFXSim.Orientation = orientation;
     talonFXSim.setMotorType(TalonFXSimState.MotorType.KrakenX60);
 
-    // setup motor sim model.
+    // TODO: setup motor sim model.
     DCMotorSim motorSimModel = new DCMotorSim(null, null, null);
 
     var simConfig = new TalonFXConfiguration();
@@ -650,10 +655,6 @@ public class BearMechanism implements Mechanism {
   private boolean isReady() {
     return motor.isConnected();
   }
-
-  //
-  // SETTERS
-  //
 
   /**
    * Sets the motor to run at a specified velocity with torque current FOC.
@@ -778,10 +779,6 @@ public class BearMechanism implements Mechanism {
     motor.setControl(coast);
   }
 
-  //
-  // COMMAND FACTORIES
-  //
-
   /**
    * Runs the motor at a specified velocity with torque current FOC.
    *
@@ -902,5 +899,106 @@ public class BearMechanism implements Mechanism {
    */
   public Command coast() {
     return run(coroutine -> setCoast()).named(this.getName() + " COAST");
+  }
+
+  /**
+   * The control type used for the self test, typically the same as the one used
+   * for mechanism commands.
+   */
+  public enum SelfTestableType {
+    VELOCITY_TORQUE,
+    POSITION_TORQUE,
+    DUTY_CYCLE,
+    VOLTAGE,
+    TORQUE,
+    VELOCITY_VOLTAGE,
+    POSITION_VOLTAGE,
+    MOTION_MAGIC_VOLTAGE,
+    MOTION_MAGIC_TORQUE,
+    MOTION_MAGIC_VELOCITY_VOLTAGE,
+    MOTION_MAGIC_VELOCITY_TORQUE,
+  }
+
+  /**
+   * Returns the command corresponding to the {@link SelfTestableType}, and sets
+   * an output for it.
+   * 
+   * @param output The output value.
+   * @return {@link Command}
+   */
+  private Command getSelfTest(double output) {
+    return switch (selfTestableType) {
+      case VELOCITY_TORQUE -> runVTCFOC(output);
+      case POSITION_TORQUE -> runPTCFOC(output);
+      case DUTY_CYCLE -> runDC(output);
+      case VOLTAGE -> runVO(output);
+      case TORQUE -> runTCFOC(output);
+      case VELOCITY_VOLTAGE -> runVV(output);
+      case POSITION_VOLTAGE -> runPV(output);
+      case MOTION_MAGIC_VOLTAGE -> runMMV(output);
+      case MOTION_MAGIC_TORQUE -> runMMTCFOC(output);
+      case MOTION_MAGIC_VELOCITY_VOLTAGE -> runMMVV(output);
+      case MOTION_MAGIC_VELOCITY_TORQUE -> runMMVTCFOC(output);
+    };
+  }
+
+  /**
+   * Initializes {@link SelfTestableType}, aswell as the fast and slow outputs for
+   * the self test. Assume same units as selfTestableType command for outputs.
+   * 
+   * @param selfTestableType  The {@link SelfTestableType}.
+   * @param outputFast        The output fast.
+   * @param outputSlow        The output slow.
+   * @param selfTestStatus    The boolean that will bve truw ehen the self test is
+   *                          passed.
+   * @param selfTestTimeLimit the timeout for the self test command.
+   */
+  public void selfTestInit(SelfTestableType selfTestableType, double outputFast, double outputSlow,
+      boolean selfTestStatus, double selfTestTimeLimit) {
+    this.selfTestableType = selfTestableType;
+    this.outputFast = outputFast;
+    this.outputSlow = outputSlow;
+    this.selfTestStatus = selfTestStatus;
+    this.selfTestTimeLimit = selfTestTimeLimit;
+  }
+
+  /**
+   * Generic command for self test at an output. Wraps completion and results of
+   * self test into NT entry.
+   * 
+   * @param output The output of the self test
+   * @param ntKey  The NT key to report status.
+   * @return
+   */
+  public Command selfTestAt(double output, String ntKey) {
+    return run(co -> {
+      var nt = NetworkTableInstance.getDefault();
+      nt.getEntry(ntKey + "/message").setString("Running...");
+      nt.getEntry(ntKey + "/passed").unpublish();
+
+      co.fork(getSelfTest(output).withTimeout(Seconds.of(selfTestTimeLimit)));
+
+      selfTestPassed = selfTestStatus;
+
+      // TODO: add specifc results stuff to result
+      String result = (selfTestPassed ? "PASS" : "FAIL");
+      nt.getEntry(ntKey + "/passed").setBoolean(selfTestPassed);
+      nt.getEntry(ntKey + "/message").setString(result);
+
+    }).named(this.getName() + " Self test @" + output);
+  }
+
+  /**
+   * Self Tests at normal speed.
+   */
+  public Command selfTestFast() {
+    return selfTestAt(outputFast, "Robot/Tests/" + getName() + "/slow");
+  }
+
+  /**
+   * Self Tests slowly.
+   */
+  public Command selfTestSlow() {
+    return selfTestAt(outputSlow, "Robot/Tests/" + getName() + "/fast");
   }
 }

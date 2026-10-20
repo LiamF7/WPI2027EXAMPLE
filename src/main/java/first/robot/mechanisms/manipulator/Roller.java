@@ -35,24 +35,27 @@ public class Roller extends BearMechanism {
         kI(0);
         kD(0);
 
+        // setup state machine
         RUN = new State("RUN", runVTCFOC(1000)).withEnd(this::hasPiece);
-
         HOLD = new State("HOLD", stop());
-
         REVERSE = new State("REVERSE", runVTCFOC(-1000)).withEnd(() -> !hasPiece());
-
         RUN.to(HOLD).onEnd();
-
         REVERSE.to(HOLD).onEnd();
 
         addConfig();
         state.configure(HOLD, RUN, REVERSE);
     }
 
+    /**
+     * Signals whether the roller has a piece.
+     */
     public boolean hasPiece() {
         return getSupplyCurrent() >= PIECE_THRESHOLD;
     }
 
+    /**
+     * Signals whether the roller is stopped.
+     */
     public boolean isStopped() {
         return Math.abs(getVelocity()) < 0.5;
     }

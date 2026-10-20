@@ -5,7 +5,6 @@ import java.util.List;
 import org.wpilib.command3.Command;
 import org.wpilib.command3.Scheduler;
 import org.wpilib.command3.Trigger;
-import org.wpilib.framework.RobotBase;
 
 /**
  * A base class for a state machine utilizing commands v3.
@@ -49,7 +48,6 @@ public class BearState {
      * Monitors transitions out of current state for state machine behavior.
      */
     private void update() {
-        if (!RobotBase.isAutonomous()) {
             List<Transition> transitions = currentState.transitions();
             for (int i = 0; i < transitions.size(); i++) {
                 Transition transition = transitions.get(i);
@@ -59,7 +57,6 @@ public class BearState {
                     // return so no uneeded iterating
                     return;
                 }
-            }
         }
     }
 
