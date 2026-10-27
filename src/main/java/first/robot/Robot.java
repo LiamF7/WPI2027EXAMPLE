@@ -1,27 +1,46 @@
 package first.robot;
 
+import org.wpilib.command3.Scheduler;
 import org.wpilib.framework.OpModeRobot;
 
+import first.robot.auto.Auton;
+import first.robot.mechanisms.DriveSubsystem;
+import first.robot.mechanisms.SuperState;
+import first.robot.mechanisms.elevator.Elevator;
 import first.robot.mechanisms.manipulator.Arm;
 import first.robot.mechanisms.manipulator.Roller;
-import lombok.Getter;
 
 public class Robot extends OpModeRobot {
 
-  @Getter private final Arm arm;
-  @Getter private final Roller roller;
+  public final Arm arm;
+
+  public final Roller roller;
+
+  public final Elevator elevator;
+
+  public final DriveSubsystem driveSubsystem;
+
+  public final SuperState superState;
+
+  public final Auton auton;
+
+  public final Scheduler scheduler = Scheduler.getDefault();
 
   public Robot() {
 
-    arm = new Arm();
-    roller = new Roller();
-    System.out.println("<<< ALL SUBSYSTEMS INITIALIZED >>>");
+    this.arm = new Arm();
+    this.roller = new Roller();
+    this.elevator = new Elevator();
+    this.driveSubsystem = new DriveSubsystem();
+    System.out.println("***********************ALL SUBSYSTEMS INITIALIZED!!!***********************");
 
-    configureBindings();
+    this.superState = new SuperState(arm, roller, elevator);
+    this.auton = new Auton(superState, driveSubsystem);
   }
 
   @Override
-  public void robotPeriodic() {}
+  public void robotPeriodic() {
+    scheduler.run();
+  }
 
-  public void configureBindings() {}
 }

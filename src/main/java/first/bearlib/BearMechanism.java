@@ -52,7 +52,7 @@ import com.ctre.phoenix6.sim.TalonFXSimState;
 
 /**
  * Team 4068's class for CTRE Kraken X44 or X60 motor mechanism. Offers clean
- * motor configuration, unified telemetry, fault logging, command factories,
+ * motor configuration, unified telemetry, fault logging, control mode factories,
  * simulstion support, self test support.
  */
 public class BearMechanism implements Mechanism{
@@ -599,7 +599,7 @@ public class BearMechanism implements Mechanism{
    * @param inertia     The moment of inertia of the mechanism load (kg*m^2).
    * @param orientation The mechanical orientation of the motor relative to the
    *                    chassis.
-   * @return A {@link DCMotorSim} model representing the physical system.
+   * @return A {@link DCMotorSim} model representing te physical system.
    */
   public DCMotorSim simulationInitKrakenX44(
       TalonFX motor, double gearRatio, double inertia, ChassisReference orientation) {
@@ -658,7 +658,7 @@ public class BearMechanism implements Mechanism{
 
   /**
    * Sets the motor to run at a specified velocity with torque current FOC.
-   * Call every loop, as the request is applied immediately.
+
    *
    * @param output The velocity in rpm
    */
@@ -780,128 +780,6 @@ public class BearMechanism implements Mechanism{
   }
 
   /**
-   * Runs the motor at a specified velocity with torque current FOC.
-   *
-   * @param output The velocity in rpm.
-   */
-  public Command runVTCFOC(double output) {
-    return run(coroutine -> setVTCFOC(output)).named(this.getName() + " RUN VTCFOC");
-  }
-
-  /**
-   * Runs the motor at a specified velocity.
-   *
-   * @param velocity The velocity in rpm.
-   */
-  public Command runVV(double velocity) {
-    return run(coroutine -> setVV(velocity)).named(this.getName() + " RUN VV");
-  }
-
-  /**
-   * Runs the motor at a specified velocity with Motion Magic.
-   *
-   * @param velocity The velocity in rpm.
-   */
-  public Command runMMVV(double velocity) {
-    return run(coroutine -> setMMVV(velocity)).named(this.getName() + " RUN MMVV");
-  }
-
-  /**
-   * Runs the motor at a specified velocity with Motion Magic and torque current
-   * FOC.
-   *
-   * @param velocity The velocity in rpm
-   */
-  public Command runMMVTCFOC(double velocity) {
-    return run(coroutine -> setMMVTCFOC(velocity)).named(this.getName() + " RUN MMVTCFOC");
-  }
-
-  /**
-   * Runs the motor at a specified duty cycle.
-   *
-   * @param output The duty cycle from -1.0 to 1.0
-   */
-  public Command runDC(double output) {
-    return run(coroutine -> setDC(output)).named(this.getName() + " RUN DC");
-  }
-
-  /**
-   * Runs the motor at a specified voltage.
-   *
-   * @param volts The voltage in volts
-   */
-  public Command runVO(double volts) {
-    return run(coroutine -> setVO(volts)).named(this.getName() + " RUN VO");
-  }
-
-  /**
-   * Runs the motor at a specified torque current.
-   *
-   * @param amps The current in amps
-   */
-  public Command runTCFOC(double amps) {
-    return run(coroutine -> setTCFOC(amps)).named(this.getName() + " RUN TCFOC");
-  }
-
-  /**
-   * Moves the motor to a specified position.
-   *
-   * @param position The position in rotations
-   */
-  public Command runPV(double position) {
-    return run(coroutine -> setPV(position)).named(this.getName() + " RUN PV");
-  }
-
-  /**
-   * Moves the motor to a specified position with torque current FOC.
-   *
-   * @param position The position in rotations
-   */
-  public Command runPTCFOC(double position) {
-    return run(coroutine -> setPTCFOC(position)).named(this.getName() + " RUN PTCFOC");
-  }
-
-  /**
-   * Moves the motor to a specified position with Motion Magic.
-   *
-   * @param position The position in rotations
-   */
-  public Command runMMV(double position) {
-    return run(coroutine -> setMMV(position)).named(this.getName() + " RUN MMV");
-  }
-
-  /**
-   * Moves the motor to a specified position with Motion Magic and torque current
-   * FOC.
-   *
-   * @param position The position in rotations
-   */
-  public Command runMMTCFOC(double position) {
-    return run(coroutine -> setMMTCFOC(position)).named(this.getName() + " RUN MMTCFOC");
-  }
-
-  /**
-   * Stops the motor.
-   */
-  public Command stop() {
-    return run(coroutine -> setStop()).named(this.getName() + " STOP");
-  }
-
-  /**
-   * Brakes the motor.
-   */
-  public Command brake() {
-    return run(coroutine -> setBrake()).named(this.getName() + " BRAKE");
-  }
-
-  /**
-   * Coasts the motor.
-   */
-  public Command coast() {
-    return run(coroutine -> setCoast()).named(this.getName() + " COAST");
-  }
-
-  /**
    * The control type used for the self test, typically the same as the one used
    * for mechanism commands.
    */
@@ -920,25 +798,25 @@ public class BearMechanism implements Mechanism{
   }
 
   /**
-   * Returns the command corresponding to the {@link SelfTestableType}, and sets
+   * Returns the runnable corresponding to the {@link SelfTestableType}, and sets
    * an output for it.
    * 
    * @param output The output value.
-   * @return {@link Command}
+   * @return {@link Runnablr}
    */
-  private Command getSelfTest(double output) {
-    return switch (selfTestableType) {
-      case VELOCITY_TORQUE -> runVTCFOC(output);
-      case POSITION_TORQUE -> runPTCFOC(output);
-      case DUTY_CYCLE -> runDC(output);
-      case VOLTAGE -> runVO(output);
-      case TORQUE -> runTCFOC(output);
-      case VELOCITY_VOLTAGE -> runVV(output);
-      case POSITION_VOLTAGE -> runPV(output);
-      case MOTION_MAGIC_VOLTAGE -> runMMV(output);
-      case MOTION_MAGIC_TORQUE -> runMMTCFOC(output);
-      case MOTION_MAGIC_VELOCITY_VOLTAGE -> runMMVV(output);
-      case MOTION_MAGIC_VELOCITY_TORQUE -> runMMVTCFOC(output);
+  private void getSelfTest(double output) {
+    switch (selfTestableType) {
+      case VELOCITY_TORQUE -> setVTCFOC(output);
+      case POSITION_TORQUE -> setPTCFOC(output);
+      case DUTY_CYCLE -> setDC(output);
+      case VOLTAGE -> setVO(output);
+      case TORQUE -> setTCFOC(output);
+      case VELOCITY_VOLTAGE -> setVV(output);
+      case POSITION_VOLTAGE -> setPV(output);
+      case MOTION_MAGIC_VOLTAGE -> setMMV(output);
+      case MOTION_MAGIC_TORQUE -> setMMTCFOC(output);
+      case MOTION_MAGIC_VELOCITY_VOLTAGE -> setMMVV(output);
+      case MOTION_MAGIC_VELOCITY_TORQUE -> setMMVTCFOC(output);
     };
   }
 
@@ -976,10 +854,10 @@ public class BearMechanism implements Mechanism{
       nt.getEntry(ntKey + "/message").setString("Running...");
       nt.getEntry(ntKey + "/passed").unpublish();
 
-      co.fork(getSelfTest(output).withTimeout(Seconds.of(selfTestTimeLimit)));
+     getSelfTest(output);
+     co.wait(Seconds.of(selfTestTimeLimit));
 
       selfTestPassed = selfTestStatus;
-
       // TODO: add specifc results stuff to result
       String result = (selfTestPassed ? "PASS" : "FAIL");
       nt.getEntry(ntKey + "/passed").setBoolean(selfTestPassed);

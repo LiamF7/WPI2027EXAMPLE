@@ -35,8 +35,7 @@ public class BearState {
         // assign initial state
         currentState = states[0];
         // initialize state actions
-        for (int i = 0; i < states.length; i++) {
-            State state = states[i];
+        for (State state: states) {
             // execute current state
             new Trigger(() -> currentState == state).whileTrue(state.action());
         }
@@ -49,8 +48,7 @@ public class BearState {
      */
     private void update() {
             List<Transition> transitions = currentState.transitions();
-            for (int i = 0; i < transitions.size(); i++) {
-                Transition transition = transitions.get(i);
+            for (Transition transition : transitions) {
                 // when transition condition is true, transition to goal
                 if (transition.condition().getAsBoolean()) {
                     this.currentState = transition.goal();

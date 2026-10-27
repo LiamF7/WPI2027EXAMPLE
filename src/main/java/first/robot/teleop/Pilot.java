@@ -1,4 +1,4 @@
-package first.robot;
+package first.robot.teleop;
 
 import org.wpilib.command3.Trigger;
 import org.wpilib.command3.button.CommandNiDsPS5Controller;

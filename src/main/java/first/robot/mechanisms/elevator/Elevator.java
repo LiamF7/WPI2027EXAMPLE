@@ -80,8 +80,8 @@ public class Elevator implements Mechanism {
      */
     public Command goToSetpoint(Setpoint setpoint) {
         return run(co -> {
-            co.fork(leader.runPTCFOC(setpoint.rotations));
-            co.fork(follower.runPTCFOC(setpoint.rotations));
+            leader.setPTCFOC(setpoint.rotations);
+            follower.setPTCFOC(setpoint.rotations);
         }).named(getName() + " SETPOINT: " + setpoint.rotations);
     }
 

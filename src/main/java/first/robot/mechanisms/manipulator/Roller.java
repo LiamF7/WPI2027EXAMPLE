@@ -2,6 +2,8 @@ package first.robot.mechanisms.manipulator;
 
 import static org.wpilib.units.Units.Amps;
 
+import org.wpilib.command3.Command;
+
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
@@ -36,9 +38,9 @@ public class Roller extends BearMechanism {
         kD(0);
 
         // setup state machine
-        RUN = new State("RUN", runVTCFOC(1000)).withEnd(this::hasPiece);
-        HOLD = new State("HOLD", stop());
-        REVERSE = new State("REVERSE", runVTCFOC(-1000)).withEnd(() -> !hasPiece());
+        RUN = new State("RUN", runAtSpeed(1000)).withEnd(this::hasPiece);
+        HOLD = new State("HOLD", this.idle());
+        REVERSE = new State("REVERSE", runAtSpeed(-1000)).withEnd(() -> !hasPiece());
         RUN.to(HOLD).onEnd();
         REVERSE.to(HOLD).onEnd();
 
@@ -58,5 +60,12 @@ public class Roller extends BearMechanism {
      */
     public boolean isStopped() {
         return Math.abs(getVelocity()) < 0.5;
+    }
+
+    public Command runAtSpeed(double rpm){
+        return run(co->{
+            this.setVTCFOC(rpm);
+            co.park();
+        }).named("ROLLER RUN @" + rpm);
     }
 }

@@ -35,6 +35,7 @@ public class Arm extends BearMechanism {
 
     /**
      * Setpoint for the arm, in rotations.
+     * 
      * @see {@link rotations}
      */
     private enum Setpoint {
@@ -68,9 +69,9 @@ public class Arm extends BearMechanism {
 
         // setup state machine
         HOME = new State("HOME", goToSetpoint(Setpoint.HOME)).withEnd(this::isAtHome);
-        IDLE = new State("IDLE", brake());
-        FORWARD = new State("FORWARD", goToSetpoint(Setpoint.FORWARD));
-        BACK = new State("BACK", goToSetpoint(Setpoint.BACK));
+        IDLE = new State("IDLE", this.idle());
+        FORWARD = new State("FORWARD", this.goToSetpoint(Setpoint.FORWARD));
+        BACK = new State("BACK", this.goToSetpoint(Setpoint.BACK));
         HOME.to(IDLE).onEnd();
 
         addConfig();
@@ -85,7 +86,10 @@ public class Arm extends BearMechanism {
      * @return {@link Command}
      */
     private Command goToSetpoint(Setpoint setpoint) {
-        return runPV(setpoint.angle.in(Rotations));
+        return run(co -> {
+            this.setPV(setpoint.angle.in(Rotations));
+            co.park();
+        }).named("ARM GO TO" + setpoint);
     }
 
     /**
