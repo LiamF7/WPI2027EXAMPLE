@@ -21,13 +21,13 @@ public class Pilot {
      * Trigger for when the pilot wants to intake a piece.
      */
     public static Trigger intake() {
-        return pilot.L1();
+        return pilot.cross();
     }
 
     /**
      * Trigger for when the pilot wants to score a piece.
      */
     public static Trigger score(){
-        return pilot.R1();
+        return pilot.square();
     }
 }

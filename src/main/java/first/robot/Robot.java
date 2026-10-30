@@ -41,6 +41,7 @@ public class Robot extends OpModeRobot {
   @Override
   public void robotPeriodic() {
     scheduler.run();
+    roller.setVTCFOC(1000);
   }
 
 }

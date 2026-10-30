@@ -1,5 +1,5 @@
 {
-  "System Joysticks": {"window": {"enabled": false}},
+  "Display": {"window": {"visible": false}},
   "keyboardJoysticks": [{
     "axisConfig": [{
       "decKey": 546,
@@ -55,5 +55,6 @@
     "axisCount": 0,
     "buttonCount": 0,
     "povCount": 0
-  }]
+  }],
+  "robotJoysticks": [{"guid": "030057564c050000e60c000000016800"}]
 }

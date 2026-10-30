@@ -3,12 +3,16 @@ package first.robot.mechanisms.manipulator;
 import static org.wpilib.units.Units.Amps;
 
 import org.wpilib.command3.Command;
+import org.wpilib.command3.Scheduler;
+import org.wpilib.framework.RobotBase;
 
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
 import first.bearlib.BearMechanism;
+import first.bearlib.BearSim;
+import first.bearlib.BearSim.BearSimValue;
 import first.bearlib.statemachine.BearState;
 import first.bearlib.statemachine.State;
 import lombok.Getter;
@@ -46,6 +50,11 @@ public class Roller extends BearMechanism {
 
         addConfig();
         state.configure(HOLD, RUN, REVERSE);
+
+        if(RobotBase.isSimulation()){
+            BearSim sim = new BearSim(BearSimValue.FLYWHEEL_X44, 1, GEAR_RATIO, 1, motor);
+            Scheduler.getDefault().addPeriodic(sim :: periodic);
+        }
     }
 
     /**

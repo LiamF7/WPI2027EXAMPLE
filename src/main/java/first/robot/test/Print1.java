@@ -16,9 +16,7 @@ public class Print1 implements OpMode{
     @Override
     public void start(){
         OpMode.super.start();
-        System.out.println("OP MODE PRINT 1 started");
-
-    
+        System.out.println("OP MODE PRINT 1 started");    
     }
 
     @Override
@@ -27,19 +25,16 @@ public class Print1 implements OpMode{
 
     @Override
     public void end() {
-        // TODO Auto-generated method stub
         OpMode.super.end();
     }
 
     @Override
     public Set<Callback> getCallbacks() {
-        // TODO Auto-generated method stub
         return OpMode.super.getCallbacks();
     }
 
     @Override
     public void periodic() {
-        // TODO Auto-generated method stub
         OpMode.super.periodic();
     }
 }
