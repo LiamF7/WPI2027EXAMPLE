@@ -50,7 +50,7 @@ public class Arm extends BearMechanism {
         }
     }
 
-    private final double selfTestOutput = Setpoint.FORWARD.angle.in(Degrees); // 5 degrees
+    private final double selfTestOutput = Setpoint.FORWARD.angle.in(Rotations);
 
     public Arm() {
         super("Arm", 2, new CANBus("Default Name"));

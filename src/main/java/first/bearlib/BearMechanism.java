@@ -14,9 +14,8 @@ import org.wpilib.command3.Scheduler;
 import org.wpilib.driverstation.DriverStationDisplay;
 import org.wpilib.driverstation.DriverStationErrors;
 import org.wpilib.networktables.NetworkTableInstance;
-import org.wpilib.simulation.DCMotorSim;
-import org.wpilib.system.RobotController;
 import org.wpilib.telemetry.Telemetry;
+import org.wpilib.telemetry.TelemetryTable;
 import org.wpilib.units.measure.Angle;
 import org.wpilib.units.measure.AngularVelocity;
 import org.wpilib.units.measure.Current;
@@ -47,15 +46,13 @@ import com.ctre.phoenix6.signals.GravityTypeValue;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.ctre.phoenix6.signals.StaticFeedforwardSignValue;
-import com.ctre.phoenix6.sim.ChassisReference;
-import com.ctre.phoenix6.sim.TalonFXSimState;
 
 /**
  * Team 4068's class for CTRE Kraken X44 or X60 motor mechanism. Offers clean
- * motor configuration, unified telemetry, fault logging, control mode factories,
- * simulstion support, self test support.
+ * motor configuration, unified telemetry, fault logging, control mode
+ * factories, self test support.
  */
-public class BearMechanism implements Mechanism{
+public class BearMechanism implements Mechanism {
 
   private int periodicCount = 0; // used for periodic fault logging
 
@@ -64,6 +61,8 @@ public class BearMechanism implements Mechanism{
   protected TalonFX motor;
 
   protected CANBus canivore;
+
+  private final TelemetryTable table;
 
   protected TalonFXConfiguration motorConfig;
 
@@ -85,28 +84,28 @@ public class BearMechanism implements Mechanism{
   protected final StatusSignal<Double> motorProfileVelocity;
 
   // Open loop
-  private final DutyCycleOut dc = new DutyCycleOut(0.0);
-  private final VoltageOut vo = new VoltageOut(0.0);
-  private final TorqueCurrentFOC tcFOC = new TorqueCurrentFOC(0.0);
+  protected final DutyCycleOut dc = new DutyCycleOut(0.0);
+  protected final VoltageOut vo = new VoltageOut(0.0);
+  protected final TorqueCurrentFOC tcFOC = new TorqueCurrentFOC(0.0);
 
   // Velocity
-  private final VelocityVoltage vv = new VelocityVoltage(0.0);
-  private VelocityTorqueCurrentFOC vtcFOC = new VelocityTorqueCurrentFOC(0.0);
+  protected final VelocityVoltage vv = new VelocityVoltage(0.0);
+  protected VelocityTorqueCurrentFOC vtcFOC = new VelocityTorqueCurrentFOC(0.0);
 
   // Position
-  private final PositionVoltage pv = new PositionVoltage(0.0);
-  private final PositionTorqueCurrentFOC ptcFOC = new PositionTorqueCurrentFOC(0.0);
+  protected final PositionVoltage pv = new PositionVoltage(0.0);
+  protected final PositionTorqueCurrentFOC ptcFOC = new PositionTorqueCurrentFOC(0.0);
 
   // Motion Magic
-  private final MotionMagicVoltage mmv = new MotionMagicVoltage(0.0);
-  private final MotionMagicTorqueCurrentFOC mmtcFOC = new MotionMagicTorqueCurrentFOC(0.0);
-  private final MotionMagicVelocityVoltage mmvv = new MotionMagicVelocityVoltage(0.0);
-  private final MotionMagicVelocityTorqueCurrentFOC mmvtcFOC = new MotionMagicVelocityTorqueCurrentFOC(0.0);
+  protected final MotionMagicVoltage mmv = new MotionMagicVoltage(0.0);
+  protected final MotionMagicTorqueCurrentFOC mmtcFOC = new MotionMagicTorqueCurrentFOC(0.0);
+  protected final MotionMagicVelocityVoltage mmvv = new MotionMagicVelocityVoltage(0.0);
+  protected final MotionMagicVelocityTorqueCurrentFOC mmvtcFOC = new MotionMagicVelocityTorqueCurrentFOC(0.0);
 
   // Neutral
-  private final NeutralOut neutral = new NeutralOut();
-  private final StaticBrake brake = new StaticBrake();
-  private final CoastOut coast = new CoastOut();
+  protected final NeutralOut neutral = new NeutralOut();
+  protected final StaticBrake brake = new StaticBrake();
+  protected final CoastOut coast = new CoastOut();
 
   /**
    * super constructor.
@@ -123,7 +122,7 @@ public class BearMechanism implements Mechanism{
 
     motorConfig = new TalonFXConfiguration();
 
-    Telemetry.getTable().log(name + " READY", this.isReady());
+    table = Telemetry.getTable(name);
 
     motorSupplyCurrent = motor.getSupplyCurrent(false);
     motorStatorCurrent = motor.getStatorCurrent(false);
@@ -153,35 +152,8 @@ public class BearMechanism implements Mechanism{
         motorTemperature,
         setpoint);
     logFaults(motor);
-  }
 
-  /**
-   * Updates the simulation for the mechanism.
-   *
-   * @param motor         The TalonFX motor controller being simulated.
-   * @param gearRatio     The gear ratio of the mechanism.
-   * @param motorSimModel The physics simulation model associated with this
-   *                      mechanism.
-   */
-  public void simulationPeriodic(TalonFX motor, double gearRatio, DCMotorSim motorSimModel) {
-    var talonFXSim = motor.getSimState();
-
-    // set the supply voltage of the TalonFX
-    talonFXSim.setSupplyVoltage(RobotController.getBatteryVoltage());
-
-    // get the motor voltage of the TalonFX
-    var motorVoltage = talonFXSim.getMotorVoltageMeasure();
-
-    // use the motor voltage to calculate new position and velocity
-    // using WPILib's DCMotorSim class for physics simulation
-    motorSimModel.setInputVoltage(motorVoltage.in(Volts));
-    motorSimModel.update(0.020); // assume 20 ms loop time
-
-    // apply the new rotor position and velocity to the TalonFX;
-    // note that this is rotor position/velocity (before gear ratio), but
-    // DCMotorSim returns mechanism position/velocity (after gear ratio)
-    talonFXSim.setRawRotorPosition(motorSimModel.getAngularPosition() * gearRatio);
-    talonFXSim.setRotorVelocity(motorSimModel.getAngularVelocity() * gearRatio);
+    table.log("Status", isReady());
   }
 
   /**
@@ -568,7 +540,7 @@ public class BearMechanism implements Mechanism{
   }
 
   /**
-   * Logs setpoint in degrees for mechanism.
+   * Logs position setpoint in degrees for mechanism.
    *
    * @return double, setpoint
    */
@@ -588,67 +560,6 @@ public class BearMechanism implements Mechanism{
     motor.optimizeBusUtilization();
   }
 
-  /* SIMULATION */
-
-  /**
-   * Initializes simulation for Kraken X44 motor.
-   *
-   * @param motor       The TalonFX motor controller being simulated.
-   * @param gearRatio   The gear ratio of the mechanism (motor rotations per
-   *                    mechanism rotation).
-   * @param inertia     The moment of inertia of the mechanism load (kg*m^2).
-   * @param orientation The mechanical orientation of the motor relative to the
-   *                    chassis.
-   * @return A {@link DCMotorSim} model representing te physical system.
-   */
-  public DCMotorSim simulationInitKrakenX44(
-      TalonFX motor, double gearRatio, double inertia, ChassisReference orientation) {
-    TalonFXSimState talonFXSim = motor.getSimState();
-
-    talonFXSim.Orientation = orientation;
-    talonFXSim.setMotorType(TalonFXSimState.MotorType.KrakenX44);
-
-    // TODO: setup motor sim model.
-
-    DCMotorSim motorSimModel = new DCMotorSim(null, null, null);
-
-    var simConfig = new TalonFXConfiguration();
-    motor.getConfigurator().refresh(simConfig);
-    simConfig.Slot0.kS = 0.0;
-    motor.getConfigurator().apply(simConfig);
-
-    return motorSimModel;
-  }
-
-  /**
-   * Initializes simulation model for a Kraken X60.
-   *
-   * @param motor       The TalonFX motor controller being simulated.
-   * @param gearRatio   The gear ratio of the mechanism (motor rotations per
-   *                    mechanism rotation).
-   * @param inertia     The moment of inertia of the mechanism load (kg*m^2).
-   * @param orientation The mechanical orientation of the motor relative to the
-   *                    chassis.
-   * @return A {@link DCMotorSim} model representing the physical system.
-   */
-  public DCMotorSim simulationInitKrakenX60(
-      TalonFX motor, double gearRatio, double inertia, ChassisReference orientation) {
-    TalonFXSimState talonFXSim = motor.getSimState();
-
-    talonFXSim.Orientation = orientation;
-    talonFXSim.setMotorType(TalonFXSimState.MotorType.KrakenX60);
-
-    // TODO: setup motor sim model.
-    DCMotorSim motorSimModel = new DCMotorSim(null, null, null);
-
-    var simConfig = new TalonFXConfiguration();
-    motor.getConfigurator().refresh(simConfig);
-    simConfig.Slot0.kS = 0.0;
-    motor.getConfigurator().apply(simConfig);
-
-    return motorSimModel;
-  }
-
   /**
    * Signals that the mechanism is ready.
    */
@@ -658,8 +569,8 @@ public class BearMechanism implements Mechanism{
 
   /**
    * Sets the motor to run at a specified velocity with torque current FOC.
-
    *
+   * 
    * @param output The velocity in rpm
    */
   public void setVTCFOC(double output) {
@@ -817,7 +728,8 @@ public class BearMechanism implements Mechanism{
       case MOTION_MAGIC_TORQUE -> setMMTCFOC(output);
       case MOTION_MAGIC_VELOCITY_VOLTAGE -> setMMVV(output);
       case MOTION_MAGIC_VELOCITY_TORQUE -> setMMVTCFOC(output);
-    };
+    }
+    ;
   }
 
   /**
@@ -854,10 +766,10 @@ public class BearMechanism implements Mechanism{
       nt.getEntry(ntKey + "/message").setString("Running...");
       nt.getEntry(ntKey + "/passed").unpublish();
 
-     getSelfTest(output);
-     co.wait(Seconds.of(selfTestTimeLimit));
-
+      getSelfTest(output);
+      co.wait(Seconds.of(selfTestTimeLimit));
       selfTestPassed = selfTestStatus;
+      this.setStop();
       // TODO: add specifc results stuff to result
       String result = (selfTestPassed ? "PASS" : "FAIL");
       nt.getEntry(ntKey + "/passed").setBoolean(selfTestPassed);

@@ -1,6 +1,7 @@
 package first.robot;
 
 import org.wpilib.command3.Scheduler;
+import org.wpilib.driverstation.Gamepad;
 import org.wpilib.framework.OpModeRobot;
 
 import first.robot.auto.Auton;
@@ -26,12 +27,15 @@ public class Robot extends OpModeRobot {
 
   public final Scheduler scheduler = Scheduler.getDefault();
 
+  public final Gamepad pilot = new Gamepad(0);
+
   public Robot() {
 
     this.arm = new Arm();
     this.roller = new Roller();
     this.elevator = new Elevator();
     this.driveSubsystem = new DriveSubsystem();
+
     System.out.println("***********************ALL SUBSYSTEMS INITIALIZED!!!***********************");
 
     this.superState = new SuperState(arm, roller, elevator);
@@ -42,5 +46,4 @@ public class Robot extends OpModeRobot {
   public void robotPeriodic() {
     scheduler.run();
   }
-
 }

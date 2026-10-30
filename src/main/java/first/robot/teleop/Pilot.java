@@ -1,7 +1,8 @@
 package first.robot.teleop;
 
 import org.wpilib.command3.Trigger;
-import org.wpilib.command3.button.CommandNiDsPS5Controller;
+import org.wpilib.command3.button.CommandGamepad;
+import org.wpilib.driverstation.DriverStation;
 
 /**
  * The primary robot controller. Utilizes triggers to combine driver input with
@@ -13,7 +14,9 @@ import org.wpilib.command3.button.CommandNiDsPS5Controller;
 public class Pilot {
 
     // driver controller
-    private static final CommandNiDsPS5Controller pilot = new CommandNiDsPS5Controller(0);
+    // private static final CommandNiDsPS5Controller pilot = new CommandNiDsPS5Controller(0);
+
+    private static final CommandGamepad pilot = new CommandGamepad(DriverStation.getGamepad(0)); 
 
     public Pilot() {}
 
@@ -21,13 +24,13 @@ public class Pilot {
      * Trigger for when the pilot wants to intake a piece.
      */
     public static Trigger intake() {
-        return pilot.L1();
+        return pilot.leftBumper();
     }
 
     /**
      * Trigger for when the pilot wants to score a piece.
      */
     public static Trigger score(){
-        return pilot.R1();
+        return pilot.rightBumper();
     }
 }

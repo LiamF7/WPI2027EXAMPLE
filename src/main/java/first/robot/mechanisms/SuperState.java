@@ -26,18 +26,18 @@ public class SuperState extends BearState{
         this.elevator = elevator;
 
         NEUTRAL = new State("NEUTRAL", neutral());
-        COLLECT = new State("COLLECT", collect()).withEnd(roller :: hasPiece);
-        SCORE = new State("SCORE", score());
-
-        COLLECT.to(NEUTRAL).onEnd();
+        COLLECT = new State("COLLECT", run());
+        SCORE = new State("SCORE", run());
 
         configure(NEUTRAL, COLLECT, SCORE);
     }
 
     private Command neutral(){
-         return Command.noRequirements(co -> {
+         return Command.requiring(roller, elevator, arm).executing(co -> {
             arm.getState().setState(arm.HOME);
             elevator.getState().setState(elevator.HOME);
+            roller.getState().setState(roller.HOLD);
+            co.yield();
         }).named("SET SCORE");
     }
 
@@ -62,5 +62,12 @@ public class SuperState extends BearState{
                 co.yield();
             }
         }).named("SET SCORE");
+    }
+
+    private Command run(){
+        return Command.requiring(roller).executing(co -> {
+            roller.getState().setState(roller.RUN);
+            co.yield();
+        }).named("RUN");
     }
 }
