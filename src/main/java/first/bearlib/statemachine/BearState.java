@@ -46,7 +46,7 @@ public class BearState {
     /**
      * Monitors transitions out of current state for state machine behavior.
      */
-    private void update() {
+    protected void update() {
             List<Transition> transitions = currentState.transitions();
             for (Transition transition : transitions) {
                 // when transition condition is true, transition to goal

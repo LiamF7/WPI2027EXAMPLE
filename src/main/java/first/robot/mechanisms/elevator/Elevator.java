@@ -82,6 +82,7 @@ public class Elevator implements Mechanism {
         return run(co -> {
             leader.setPTCFOC(setpoint.rotations);
             follower.setPTCFOC(setpoint.rotations);
+            co.park();
         }).named(getName() + " SETPOINT: " + setpoint.rotations);
     }
 
