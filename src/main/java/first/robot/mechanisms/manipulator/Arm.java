@@ -4,6 +4,10 @@ import static org.wpilib.units.Units.Degrees;
 import static org.wpilib.units.Units.Rotations;
 
 import org.wpilib.command3.Command;
+import org.wpilib.command3.Scheduler;
+import org.wpilib.framework.RobotBase;
+import org.wpilib.telemetry.Telemetry;
+import org.wpilib.telemetry.TelemetryTable;
 import org.wpilib.units.measure.Angle;
 
 import com.ctre.phoenix6.CANBus;
@@ -12,6 +16,8 @@ import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
 import first.bearlib.BearMechanism;
+import first.bearlib.BearSim;
+import first.bearlib.BearSim.BearSimValue;
 import first.bearlib.statemachine.BearState;
 import first.bearlib.statemachine.State;
 import lombok.Getter;
@@ -21,6 +27,8 @@ public class Arm extends BearMechanism {
     private final double GEAR_RATIO = 1.0;
 
     private final double TOLERANCE = Degrees.of(5).in(Degrees);
+
+    private final TelemetryTable table = Telemetry.getTable("Arm");
 
     @Getter
     private final BearState state = new BearState();
@@ -77,6 +85,11 @@ public class Arm extends BearMechanism {
         addConfig();
         state.configure(IDLE, HOME, FORWARD, BACK);
         selfTestInit(SelfTestableType.POSITION_VOLTAGE, selfTestOutput, selfTestOutput, isOut(), 15.0);
+
+        if (RobotBase.isSimulation()) {
+             BearSim bearSim = new BearSim(BearSimValue.ARM_X44, 1, GEAR_RATIO, 1, 0.1, -2, 2, 0, motor);
+             Scheduler.getDefault().addPeriodic(bearSim::periodic);
+        }
     }
 
     /**
@@ -104,5 +117,12 @@ public class Arm extends BearMechanism {
      */
     public boolean isOut() {
         return Math.abs(getAngle() - Setpoint.FORWARD.angle.in(Degrees)) <= TOLERANCE;
+    }
+
+    public void Log(){
+        table.log("position", this.getAngle());
+        table.log("out", this.isOut());
+        table.log("state", state.getCurrent().name());
+        
     }
 }

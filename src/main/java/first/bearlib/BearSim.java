@@ -65,7 +65,7 @@ public class BearSim {
     /**
      * Simulation model of CTRE mechanism, based of mechanism and motor type.
      * Utilizes WPILib's {@link FlywheelSim} or {@link DCMotorSim}. This constructor
-     * will be used for a flywheel sim!
+     * will be used for a elevator sim!
      * 
      * @param bearSimValue   The mechanism and motor type.
      * @param gearRatio      The elevator gear ratio.
@@ -93,7 +93,7 @@ public class BearSim {
     /**
      * Simulation model of CTRE mechanism, based of mechanism and motor type.
      * Utilizes WPILib's {@link FlywheelSim} or {@link DCMotorSim}. This constructor
-     * will be used for a flywheel sim!
+     * will be used for an arm sim!
      * 
      * @param inertia   The moment of inertia of the system.
      * @param gearRatio The gear ratio of the system.
