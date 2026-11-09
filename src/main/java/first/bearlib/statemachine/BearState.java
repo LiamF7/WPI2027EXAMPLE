@@ -74,6 +74,9 @@ public class BearState {
         }).named("SET STATE " + state.name().toUpperCase());
     }
 
+    /**
+     * The current/active state.
+     */
     public State getCurrent(){
         return this.currentState;
     }

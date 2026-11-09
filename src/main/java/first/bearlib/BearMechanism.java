@@ -22,6 +22,7 @@ import org.wpilib.units.measure.Current;
 import org.wpilib.units.measure.Temperature;
 import org.wpilib.units.measure.Voltage;
 import first.bearlib.util.PhoenixUtil;
+import lombok.Getter;
 
 import com.ctre.phoenix6.BaseStatusSignal;
 import com.ctre.phoenix6.CANBus;
@@ -58,7 +59,7 @@ public class BearMechanism implements Mechanism {
 
   private boolean lastHasFault = false;
 
-  protected TalonFX motor;
+  @Getter protected TalonFX motor;
 
   protected CANBus canivore;
 

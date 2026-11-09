@@ -5,6 +5,8 @@ import static org.wpilib.units.Units.Rotations;
 
 import org.wpilib.command3.Command;
 import org.wpilib.command3.Mechanism;
+import org.wpilib.command3.Scheduler;
+import org.wpilib.framework.RobotBase;
 
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.signals.GravityTypeValue;
@@ -12,6 +14,8 @@ import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
 import first.bearlib.BearMechanism;
+import first.bearlib.BearSim;
+import first.bearlib.BearSim.BearSimValue;
 import first.bearlib.statemachine.BearState;
 import first.bearlib.statemachine.State;
 import lombok.Getter;
@@ -70,6 +74,12 @@ public class Elevator implements Mechanism {
         leader.addConfig();
         follower.cloneConfig(leader.getConfig());
         state.configure(HOME, HIGH, MID);
+
+        if (RobotBase.isSimulation()) {
+            BearSim sim = new BearSim(BearSimValue.ELEVATOR_X44, GEAR_RATIO, 2, 0.005, 0.0, 1.0, 0.0,
+                    leader.getMotor());
+            Scheduler.getDefault().addPeriodic(sim::periodic);
+        }
     }
 
     /**

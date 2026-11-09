@@ -87,8 +87,8 @@ public class Arm extends BearMechanism {
         selfTestInit(SelfTestableType.POSITION_VOLTAGE, selfTestOutput, selfTestOutput, isOut(), 15.0);
 
         if (RobotBase.isSimulation()) {
-             BearSim bearSim = new BearSim(BearSimValue.ARM_X44, 1, GEAR_RATIO, 1, 0.1, -2, 2, 0, motor);
-             Scheduler.getDefault().addPeriodic(bearSim::periodic);
+            BearSim bearSim = new BearSim(BearSimValue.ARM_X44, 1, GEAR_RATIO, 1, 0.1, -2, 2, 0, motor);
+            Scheduler.getDefault().addPeriodic(bearSim::periodic);
         }
     }
 
@@ -119,10 +119,10 @@ public class Arm extends BearMechanism {
         return Math.abs(getAngle() - Setpoint.FORWARD.angle.in(Degrees)) <= TOLERANCE;
     }
 
-    public void Log(){
+    public void Log() {
         table.log("position", this.getAngle());
         table.log("out", this.isOut());
         table.log("state", state.getCurrent().name());
-        
+
     }
 }

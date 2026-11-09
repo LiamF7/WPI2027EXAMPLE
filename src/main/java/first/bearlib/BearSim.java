@@ -19,24 +19,124 @@ import com.ctre.phoenix6.sim.TalonFXSimState;
  */
 public class BearSim {
 
+    /**
+     * WPILIB FlywheelSim, in case of non-flywheel {@link BearSimValue}, will be set
+     * to null, and all calls will return exception. Currently TalonFXSimSupport is
+     * not optimal..
+     */
     private final FlywheelSim flywheelSim;
+    /**
+     * WPILIB ElevatorSim, in case of non-elevator {@link BearSimValue}, will be set
+     * to null, and all calls will return exception.
+     */
     private final ElevatorSim elevatorSim;
+    /**
+     * WPILIB SignleJointedArmSim, in case of non-arm {@link BearSimValue}, will be
+     * set
+     * to null, and all calls will return exception.
+     */
     private final SingleJointedArmSim armSim;
 
+    /**
+     * The {@link BearSimValue} defined in the constructor, that determines the sim
+     * model, as well as the porper parameters to be paseed in.
+     */
     private final BearSimValue bearSimValue;
+    
+    /**
+     * A list of all the CTRE motors used in the BearSim system.
+     */
     private final TalonFX[] motors;
+
+    /**
+     * Used in elevator sim, initialized to zero.
+     */
     private double drumRadius = 0.0;
+
+    /**
+     * Used in all mechanisms, initialized to zero.
+     */
     private double gearRatio = 0.0;
 
     /**
      * The motor and mechanism type referenced when constructing a {@link BearSim}.
      */
     public enum BearSimValue {
+        /**
+         * Will use in constructor:
+         * 
+         * @param bearSimValue The mechanism and motor type.
+         * @param inertia      The inertia of the system.
+         * @param gearRatio    The gear ratio of the system.
+         * @param numMotors    The number of motors in the system
+         * @param motors       The motors involved involved in the system.
+         */
         FLYWHEEL_X44,
+        /**
+         * Will use in constructor:
+         * 
+         * @param bearSimValue   The mechanism and motor type.
+         * @param gearRatio      The elevator gear ratio.
+         * @param numMotors      The number of motors in the system.
+         * @param mass           The mass of the elevator.
+         * @param drumRadius     The radius of the elevator drum.
+         * @param minHeight      The min height of the elevator.
+         * @param maxHeight      The max height of the elevator.
+         * @param startingHeight The starting height of the elevator.
+         * @param motors         The motors involved involved in the system.
+         */
         ELEVATOR_X44,
+        /**
+         * Will use in constructor:
+         *
+         * @param bearSimValue the {@link BearSimValue} for the mechanism.
+         * @param inertia      The moment of inertia of the system.
+         * @param gearRatio    The gear ratio of the system.
+         * @param numMotors    The number of motors in the system
+         * @param armLength    The length of the arm.
+         * @param minRads      The minimum arm rotations (in rads).
+         * @param maxRads      The maximum arm rotations (in rads).
+         * @param startRads    The start/initial rotations (in rads).
+         * @param motors       The motors involved involved in the system.
+         */
         ARM_X44,
+        /**
+         * Will use in constructor:
+         * 
+         * @param bearSimValue The mechanism and motor type.
+         * @param inertia      The inertia of the system.
+         * @param gearRatio    The gear ratio of the system.
+         * @param numMotors    The number of motors in the system
+         * @param motors       The motors involved involved in the system.
+         */
         FLYWHEEL_X60,
+        /**
+         * Will use in constructor:
+         * 
+         * @param bearSimValue   The mechanism and motor type.
+         * @param gearRatio      The elevator gear ratio.
+         * @param numMotors      The number of motors in the system.
+         * @param mass           The mass of the elevator.
+         * @param drumRadius     The radius of the elevator drum.
+         * @param minHeight      The min height of the elevator.
+         * @param maxHeight      The max height of the elevator.
+         * @param startingHeight The starting height of the elevator.
+         * @param motors         The motors involved involved in the system.
+         */
         ELEVATOR_X60,
+        /**
+         * Will use in constructor:
+         * 
+         * @param bearSimValue the {@link BearSimValue} for the mechanism.
+         * @param inertia      The moment of inertia of the system.
+         * @param gearRatio    The gear ratio of the system.
+         * @param numMotors    The number of motors in the system
+         * @param armLength    The length of the arm.
+         * @param minRads      The minimum arm rotations (in rads).
+         * @param maxRads      The maximum arm rotations (in rads).
+         * @param startRads    The start/initial rotations (in rads).
+         * @param motors       The motors involved involved in the system.
+         */
         ARM_X60,
     }
 
@@ -69,7 +169,6 @@ public class BearSim {
      * 
      * @param bearSimValue   The mechanism and motor type.
      * @param gearRatio      The elevator gear ratio.
-     * @param numMotors      The number of motors in the system.
      * @param mass           The mass of the elevator.
      * @param drumRadius     The radius of the elevator drum.
      * @param minHeight      The min height of the elevator.
@@ -77,13 +176,13 @@ public class BearSim {
      * @param startingHeight The starting height of the elevator.
      * @param motors         The motors involved involved in the system.
      */
-    public BearSim(BearSimValue bearSimValue, double gearRatio, int numMotors, double mass, double drumRadius,
+    public BearSim(BearSimValue bearSimValue, double gearRatio, double mass, double drumRadius,
             double minHeight, double maxHeight, double startingHeight, TalonFX... motors) {
         this.bearSimValue = bearSimValue;
         this.motors = motors;
 
         this.flywheelSim = null;
-        this.elevatorSim = setupElevatorSim(gearRatio, numMotors, mass, drumRadius, minHeight, maxHeight,
+        this.elevatorSim = setupElevatorSim(gearRatio, motors.length, mass, drumRadius, minHeight, maxHeight,
                 startingHeight);
         this.armSim = null;
         this.gearRatio = gearRatio;
@@ -95,14 +194,15 @@ public class BearSim {
      * Utilizes WPILib's {@link FlywheelSim} or {@link DCMotorSim}. This constructor
      * will be used for an arm sim!
      * 
-     * @param inertia   The moment of inertia of the system.
-     * @param gearRatio The gear ratio of the system.
-     * @param numMotors The number of motors in the system
-     * @param armLength The length of the arm.
-     * @param minRads   The minimum arm rotations (in rads).
-     * @param maxRads   The maximum arm rotations (in rads).
-     * @param startRads The start/initial rotations (in rads).
-     * @param motors    The motors involved involved in the system.
+     * @param bearSimValue the {@link BearSimValue} for the mechanism.
+     * @param inertia      The moment of inertia of the system.
+     * @param gearRatio    The gear ratio of the system.
+     * @param numMotors    The number of motors in the system
+     * @param armLength    The length of the arm.
+     * @param minRads      The minimum arm rotations (in rads).
+     * @param maxRads      The maximum arm rotations (in rads).
+     * @param startRads    The start/initial rotations (in rads).
+     * @param motors       The motors involved involved in the system.
      */
     public BearSim(BearSimValue bearSimValue, double inertia, double gearRatio, int numMotors, double armLength,
             double minRads, double maxRads, double startRads, TalonFX... motors) {
@@ -213,45 +313,45 @@ public class BearSim {
      * Periodic, only call for sim.
      */
     public void periodic() {
-    double volts = motors[0].getSimState().getMotorVoltageMeasure().in(Volts);
+        double volts = motors[0].getSimState().getMotorVoltageMeasure().in(Volts);
 
-    double mechPosRots = 0;
-    double mechVelRps = 0;
-    boolean hasPosition = true;
+        double mechPosRots = 0;
+        double mechVelRps = 0;
+        boolean hasPosition = true;
 
-    switch (bearSimValue) {
-        case FLYWHEEL_X44:
-        case FLYWHEEL_X60:
-            flywheelSim.setInputVoltage(volts);
-            flywheelSim.update(0.02);
-            mechVelRps = flywheelSim.getAngularVelocity() / (2 * Math.PI);
-            hasPosition = false;
-            break;
+        switch (bearSimValue) {
+            case FLYWHEEL_X44:
+            case FLYWHEEL_X60:
+                flywheelSim.setInputVoltage(volts);
+                flywheelSim.update(0.02);
+                mechVelRps = flywheelSim.getAngularVelocity() / (2 * Math.PI);
+                hasPosition = false;
+                break;
 
-        case ELEVATOR_X44:
-        case ELEVATOR_X60:
-            elevatorSim.setInputVoltage(volts);
-            elevatorSim.update(0.02);
-            mechPosRots = elevatorSim.getPosition() / (2 * Math.PI * drumRadius);
-            mechVelRps = elevatorSim.getVelocity() / (2 * Math.PI * drumRadius);
-            break;
+            case ELEVATOR_X44:
+            case ELEVATOR_X60:
+                elevatorSim.setInputVoltage(volts);
+                elevatorSim.update(0.02);
+                mechPosRots = elevatorSim.getPosition() / (2 * Math.PI * drumRadius);
+                mechVelRps = elevatorSim.getVelocity() / (2 * Math.PI * drumRadius);
+                break;
 
-        case ARM_X44:
-        case ARM_X60:
-            armSim.setInputVoltage(volts);
-            armSim.update(0.02);
-            mechPosRots = armSim.getAngle() / (2 * Math.PI);
-            mechVelRps = armSim.getVelocity() / (2 * Math.PI);
-            break;
-    }
-
-    for (TalonFX motor : motors) {
-        TalonFXSimState simState = motor.getSimState();
-        simState.setSupplyVoltage(RobotController.getBatteryVoltage());
-        if (hasPosition) {
-            simState.setRawRotorPosition(mechPosRots * gearRatio);
+            case ARM_X44:
+            case ARM_X60:
+                armSim.setInputVoltage(volts);
+                armSim.update(0.02);
+                mechPosRots = armSim.getAngle() / (2 * Math.PI);
+                mechVelRps = armSim.getVelocity() / (2 * Math.PI);
+                break;
         }
-        simState.setRotorVelocity(mechVelRps * gearRatio);
+
+        for (TalonFX motor : motors) {
+            TalonFXSimState simState = motor.getSimState();
+            simState.setSupplyVoltage(RobotController.getBatteryVoltage());
+            if (hasPosition) {
+                simState.setRawRotorPosition(mechPosRots * gearRatio);
+            }
+            simState.setRotorVelocity(mechVelRps * gearRatio);
+        }
     }
-}
 }
