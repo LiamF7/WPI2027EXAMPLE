@@ -7,6 +7,8 @@ import org.wpilib.command3.Command;
 import org.wpilib.command3.Mechanism;
 import org.wpilib.command3.Scheduler;
 import org.wpilib.framework.RobotBase;
+import org.wpilib.telemetry.Telemetry;
+import org.wpilib.telemetry.TelemetryTable;
 
 import com.ctre.phoenix6.CANBus;
 import com.ctre.phoenix6.signals.GravityTypeValue;
@@ -24,6 +26,9 @@ public class Elevator implements Mechanism {
 
     private final BearMechanism leader;
     private final BearMechanism follower;
+
+    private final TelemetryTable table = Telemetry.getTable("Elevator");
+
 
     private final double GEAR_RATIO = 2.76;
     private final double tolerance = Rotations.of(0.2).in(Degrees);
@@ -104,4 +109,9 @@ public class Elevator implements Mechanism {
                 && Math.abs(follower.getSetpoint() - follower.getAngle()) < tolerance;
     }
 
+    public void Log() {
+        table.log("at setpoint", this.isAtSetpoint());
+        table.log("state", state.getCurrent().name());
+
+    }
 }

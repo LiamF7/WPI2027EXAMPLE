@@ -9,6 +9,7 @@ import first.bearlib.statemachine.State;
 import first.robot.mechanisms.elevator.Elevator;
 import first.robot.mechanisms.manipulator.Arm;
 import first.robot.mechanisms.manipulator.Roller;
+import first.robot.teleop.Pilot;
 
 public class SuperState extends BearState{
 
@@ -31,7 +32,7 @@ public class SuperState extends BearState{
 
         configure(NEUTRAL, COLLECT, SCORE);
     }
-
+    
     private Command neutral(){
          return Command.requiring(roller, elevator, arm).executing(co -> {
             arm.getState().setState(arm.HOME);
@@ -69,5 +70,12 @@ public class SuperState extends BearState{
             roller.getState().setState(roller.RUN);
             co.yield();
         }).named("RUN");
+    }
+
+    public void configureTeleopState(){
+        NEUTRAL.to(COLLECT).when(Pilot.intake():: getAsBoolean);
+        COLLECT.to(SCORE).when(Pilot.score():: getAsBoolean);
+        SCORE.to(NEUTRAL).when(Pilot.score().negate():: getAsBoolean);
+        COLLECT.to(NEUTRAL).when(Pilot.intake().negate():: getAsBoolean);
     }
 }
