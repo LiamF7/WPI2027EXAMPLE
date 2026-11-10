@@ -27,7 +27,7 @@ public class Elevator implements Mechanism {
     private final BearMechanism leader;
     private final BearMechanism follower;
 
-    private final TelemetryTable table = Telemetry.getTable("Arm");
+    private final TelemetryTable table = Telemetry.getTable("Elevator");
 
 
     private final double GEAR_RATIO = 2.76;
