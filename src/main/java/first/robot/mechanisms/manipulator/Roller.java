@@ -44,7 +44,7 @@ public class Roller extends BearMechanism {
         neutralMode(NeutralModeValue.Brake);
         inverted(InvertedValue.CounterClockwise_Positive);
         sensorToMechanismRatio(GEAR_RATIO);
-        kP(10);
+        kP(0);
         kI(0);
         kD(0);
 

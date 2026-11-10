@@ -13,18 +13,19 @@ import org.wpilib.simulation.SingleJointedArmSim;
 import org.wpilib.system.RobotController;
 
 import com.ctre.phoenix6.hardware.TalonFX;
+import com.ctre.phoenix6.sim.TalonFXSSimState;
 import com.ctre.phoenix6.sim.TalonFXSimState;
 
 /**
  * Simulation model of CTRE mechanism, based of mechanism and motor type.
- * Utilizes WPILib's {@link FlywheelSim} or {@link DCMotorSim}.
+ * Utilizes WPILib {@link FlywheelSim}, {@link ElevatorSim}, or
+ * {@link SingleJointedArmSim}.
  */
 public class BearSim {
 
     /**
      * WPILIB FlywheelSim, in case of non-flywheel {@link BearSimValue}, will be set
-     * to null, and all calls will return exception. Currently TalonFXSimSupport is
-     * not optimal..
+     * to null, and all calls will return exception.
      */
     private final FlywheelSim flywheelSim;
     /**
@@ -306,49 +307,56 @@ public class BearSim {
     }
 
     /**
-     * Periodic, only call for sim.
+     * Generic Periodic.
      */
     public void periodic() {
+        // the sim applied motor voltage
         double volts = motors[0].getSimState().getMotorVoltageMeasure().in(Volts);
+        // the mechanism position (in rotations), is not used for flywheel
         double mechPosRots = 0;
+        // the mechanism velocity (in RPS)
         double mechVelRps = 0;
         boolean isFlywheel = false;
 
+        // update above values based off overall BearSimValue
         switch (bearSimValue) {
             case FLYWHEEL_X44:
             case FLYWHEEL_X60:
-                isFlywheel = true;
+                isFlywheel = true; // is a flywheel!
                 flywheelSim.setInputVoltage(volts);
                 flywheelSim.update(0.02);
                 mechVelRps = flywheelSim.getAngularVelocity() / (2.0 * Math.PI) * gearRatio;
+                // addRotorPosition() used for flywheel sim, don't update mechPosRots
                 break;
             case ELEVATOR_X44:
             case ELEVATOR_X60:
-                isFlywheel = false;
+                isFlywheel = false; // not a flywheel!
                 elevatorSim.setInputVoltage(volts);
                 elevatorSim.update(0.02);
                 mechPosRots = elevatorSim.getPosition() / (2 * Math.PI * drumRadius);
                 mechVelRps = elevatorSim.getVelocity() / (2 * Math.PI * drumRadius);
                 break;
-
             case ARM_X44:
             case ARM_X60:
-                isFlywheel = false;
+                isFlywheel = false; // not a flywheel!
                 armSim.setInputVoltage(volts);
                 armSim.update(0.02);
                 mechPosRots = armSim.getAngle() / (2 * Math.PI);
                 mechVelRps = armSim.getVelocity() / (2 * Math.PI);
                 break;
         }
-
+        // update TalonFXSim for every motor in mechanism
         for (TalonFX motor : motors) {
             TalonFXSimState simState = motor.getSimState();
             simState.setSupplyVoltage(RobotController.getBatteryVoltage());
-            simState.setRotorVelocity(mechVelRps * gearRatio);
             if (isFlywheel) {
+                simState.setRotorVelocity(mechVelRps); // Flywheel is already scaled in switch
                 simState.addRotorPosition(mechVelRps * 0.02);
-                flywheelSim.setInput(volts);
+                continue;
             }
+
+            // Elevator and Arm need their mechanism values multiplied by gearRatio
+            simState.setRotorVelocity(mechVelRps * gearRatio);
             simState.setRawRotorPosition(mechPosRots * gearRatio);
         }
     }
