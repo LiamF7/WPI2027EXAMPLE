@@ -11,14 +11,15 @@ import org.wpilib.telemetry.Telemetry;
 import org.wpilib.telemetry.TelemetryTable;
 
 import com.ctre.phoenix6.CANBus;
+import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
 import first.bearlib.BearMechanism;
 import first.bearlib.BearSim;
-import first.bearlib.BearSim.BearSimValue;
 import first.bearlib.statemachine.BearState;
 import first.bearlib.statemachine.State;
+import first.robot.teleop.Pilot;
 import lombok.Getter;
 
 public class Roller extends BearMechanism {
@@ -32,11 +33,19 @@ public class Roller extends BearMechanism {
     @Getter
     private final BearState state = new BearState();
 
-    public final State RUN;
+    public final State RUN = new State("RUN", runAtSpeed(1020));
+    public final State HOLD = new State("HOLD", runAtSpeed(0.0));
+    public final State SubLevel = new State("SUB", runAtSpeed(1020));
+    public final State REVERSE = new State("REVERSE", runAtSpeed(-1020));
 
-    public final State HOLD;
+    private RollerSim rollerSim;
 
-    public final State REVERSE;
+    class RollerSim extends BearSim{
+        public RollerSim(TalonFX ... motors){
+            super(motors);
+            flywheel44(GEAR_RATIO, 0.0001);
+        }
+    }
 
     public Roller() {
         super("Roller", 0, new CANBus("Default Name"));
@@ -44,23 +53,20 @@ public class Roller extends BearMechanism {
         neutralMode(NeutralModeValue.Brake);
         inverted(InvertedValue.CounterClockwise_Positive);
         sensorToMechanismRatio(GEAR_RATIO);
-        kP(10);
-        kI(0);
-        kD(0);
-
-        // setup state machine
-        RUN = new State("RUN", runAtSpeed(1000));
-        HOLD = new State("HOLD", runAtSpeed(0.0));
-        REVERSE = new State("REVERSE", runAtSpeed(-1000));
+        kP(0.006);
+        kV(0.093);
+        kS(0.011);
 
         Scheduler.getDefault().addPeriodic(this::log);
+
+        RUN.to(SubLevel).when(()-> getVelocity() > 500);
 
         addConfig();
         state.configure(HOLD, RUN, REVERSE);
 
-        if (RobotBase.isSimulation()) {
-            BearSim bearSim = new BearSim(BearSimValue.FLYWHEEL_X44, 0.001, GEAR_RATIO, 1, this.getMotor());
-            Scheduler.getDefault().addPeriodic(bearSim::periodic);
+        if(RobotBase.isSimulation()){
+            rollerSim = new RollerSim(this.getMotor());
+            Scheduler.getDefault().addPeriodic(rollerSim :: flywheelPeriodic);
         }
     }
 
@@ -87,7 +93,7 @@ public class Roller extends BearMechanism {
      */
     public Command runAtSpeed(double rpm) {
         return run(co -> {
-            this.setVTCFOC(rpm);
+            this.setVV(rpm);
         }).named("ROLLER RUN @" + rpm);
     }
 
@@ -97,13 +103,15 @@ public class Roller extends BearMechanism {
      * @return rpm.
      */
     public double targetSpeed(){
-        return vtcFOC.getVelocityMeasure().in(RPM);
+        return vv.getVelocityMeasure().in(RPM);
     }
 
-    private void log() {
+    @Override
+    public void log() {
         table.log("velocity", this.getVelocity());
         table.log("stopped?", this.isStopped());
         table.log("state", state.getCurrent().name());
         table.log("setpoint", this.targetSpeed());
+        table.log("press", Pilot.intake().getAsBoolean());
     }
 }

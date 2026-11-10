@@ -3,6 +3,7 @@ package first.robot;
 import org.wpilib.command3.Scheduler;
 import org.wpilib.driverstation.Gamepad;
 import org.wpilib.framework.OpModeRobot;
+import org.wpilib.telemetry.Telemetry;
 
 import first.robot.auto.Auton;
 import first.robot.mechanisms.DriveSubsystem;
@@ -36,7 +37,7 @@ public class Robot extends OpModeRobot {
     this.elevator = new Elevator();
     this.driveSubsystem = new DriveSubsystem();
 
-    System.out.println("***********************ALL SUBSYSTEMS INITIALIZED!!!***********************");
+    System.out.println("--- All Mechanisms Initialized ---");
 
     this.superState = new SuperState(arm, roller, elevator);
     this.auton = new Auton(superState, driveSubsystem);
@@ -45,5 +46,7 @@ public class Robot extends OpModeRobot {
   @Override
   public void robotPeriodic() {
     scheduler.run();
+
+    Telemetry.getTable().log("SUPER STATE",superState.getCurrent().name());
   }
 }

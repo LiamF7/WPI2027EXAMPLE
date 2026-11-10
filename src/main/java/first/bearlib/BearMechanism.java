@@ -59,7 +59,8 @@ public class BearMechanism implements Mechanism {
 
   private boolean lastHasFault = false;
 
-  @Getter protected TalonFX motor;
+  @Getter
+  protected TalonFX motor;
 
   protected CANBus canivore;
 
@@ -109,8 +110,6 @@ public class BearMechanism implements Mechanism {
   protected final CoastOut coast = new CoastOut();
 
   /**
-   * super constructor.
-   *
    * @param name     name of the mechanism.
    * @param ID       The CAN ID.
    * @param canivore The CANBus.
@@ -137,6 +136,8 @@ public class BearMechanism implements Mechanism {
 
     DriverStationDisplay.addLine(name + " INITIALIZED!");
 
+      optimizeCAN();
+    
     // 2027 periodic call
     Scheduler.getDefault().addPeriodic(this::periodic);
   }
@@ -155,6 +156,13 @@ public class BearMechanism implements Mechanism {
     logFaults(motor);
 
     table.log("Status", isReady());
+    log();
+  }
+
+  /**
+   * Use this method to log what you want for the subsytem via the Telemetry API.
+   */
+  public void log() {
   }
 
   /**
@@ -783,13 +791,13 @@ public class BearMechanism implements Mechanism {
    * Self Tests at normal speed.
    */
   public Command selfTestFast() {
-    return selfTestAt(outputFast, "Robot/Tests/" + getName() + "/slow");
+    return selfTestAt(outputFast, "Robot/Tests/" + getName() + "/fast");
   }
 
   /**
    * Self Tests slowly.
    */
   public Command selfTestSlow() {
-    return selfTestAt(outputSlow, "Robot/Tests/" + getName() + "/fast");
+    return selfTestAt(outputSlow, "Robot/Tests/" + getName() + "/slow");
   }
 }
