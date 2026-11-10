@@ -59,7 +59,7 @@ public class Roller extends BearMechanism {
         state.configure(HOLD, RUN, REVERSE);
 
         if (RobotBase.isSimulation()) {
-            BearSim bearSim = new BearSim(BearSimValue.FLYWHEEL_X44, 10000, GEAR_RATIO, 1, motor);
+            BearSim bearSim = new BearSim(BearSimValue.FLYWHEEL_X44, 0.001, GEAR_RATIO, 1, this.getMotor());
             Scheduler.getDefault().addPeriodic(bearSim::periodic);
         }
     }

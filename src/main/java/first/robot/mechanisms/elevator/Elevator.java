@@ -77,7 +77,7 @@ public class Elevator implements Mechanism {
 
         if (RobotBase.isSimulation()) {
             BearSim sim = new BearSim(BearSimValue.ELEVATOR_X44, GEAR_RATIO, 2, 0.005, 0.0, 1.0, 0.0,
-                    leader.getMotor());
+                    leader.getMotor(), follower.getMotor());
             Scheduler.getDefault().addPeriodic(sim::periodic);
         }
     }
