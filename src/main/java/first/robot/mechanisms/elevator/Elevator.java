@@ -11,13 +11,13 @@ import org.wpilib.telemetry.Telemetry;
 import org.wpilib.telemetry.TelemetryTable;
 
 import com.ctre.phoenix6.CANBus;
+import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.GravityTypeValue;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
 import first.bearlib.BearMechanism;
 import first.bearlib.BearSim;
-import first.bearlib.BearSim.BearSimValue;
 import first.bearlib.statemachine.BearState;
 import first.bearlib.statemachine.State;
 import lombok.Getter;
@@ -29,9 +29,17 @@ public class Elevator implements Mechanism {
 
     private final TelemetryTable table = Telemetry.getTable("Elevator");
 
-
     private final double GEAR_RATIO = 2.76;
     private final double tolerance = Rotations.of(0.2).in(Degrees);
+
+    @Getter
+    private final BearState state = new BearState();
+
+    public final State HOME = new State("HOME", this.goToSetpoint(Setpoint.HOME));
+    public final State MID = new State("MID", this.goToSetpoint(Setpoint.MID));
+    public final State HIGH = new State("HIGH", this.goToSetpoint(Setpoint.HIGH));
+
+    private ElevatorMechanismSim sim;
 
     /**
      * Setpoint for the elevator, in rotations.
@@ -48,11 +56,12 @@ public class Elevator implements Mechanism {
         }
     }
 
-    @Getter
-    private final BearState state = new BearState();
-    public final State HOME;
-    public final State MID;
-    public final State HIGH;
+    class ElevatorMechanismSim extends BearSim {
+        public ElevatorMechanismSim(TalonFX... motors) {
+            super(motors);
+            elevator44(5.0, GEAR_RATIO, 0.005, 0.0, 1.0, 0.0);
+        }
+    }
 
     public Elevator() {
 
@@ -71,19 +80,13 @@ public class Elevator implements Mechanism {
         leader.kG(10);
         leader.kS(6.4);
 
-        // State setup
-        HOME = new State("HOME", this.goToSetpoint(Setpoint.HOME));
-        MID = new State("MID", this.goToSetpoint(Setpoint.MID));
-        HIGH = new State("HIGH", this.goToSetpoint(Setpoint.HIGH));
-
         leader.addConfig();
         follower.cloneConfig(leader.getConfig());
         state.configure(HOME, HIGH, MID);
 
         if (RobotBase.isSimulation()) {
-            BearSim sim = new BearSim(BearSimValue.ELEVATOR_X44, GEAR_RATIO, 2, 0.005, 0.0, 1.0, 0.0,
-                    leader.getMotor(), follower.getMotor());
-            Scheduler.getDefault().addPeriodic(sim::periodic);
+            sim = new ElevatorMechanismSim(leader.getMotor(), follower.getMotor());
+            Scheduler.getDefault().addPeriodic(sim::elevatorPeriodic);
         }
     }
 
@@ -109,9 +112,8 @@ public class Elevator implements Mechanism {
                 && Math.abs(follower.getSetpoint() - follower.getAngle()) < tolerance;
     }
 
-    public void Log() {
+    public void log() {
         table.log("at setpoint", this.isAtSetpoint());
         table.log("state", state.getCurrent().name());
-
     }
 }

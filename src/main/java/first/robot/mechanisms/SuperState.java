@@ -3,6 +3,7 @@ package first.robot.mechanisms;
 import static org.wpilib.units.Units.Seconds;
 
 import org.wpilib.command3.Command;
+import org.wpilib.command3.StateMachine;
 
 import first.bearlib.statemachine.BearState;
 import first.bearlib.statemachine.State;
@@ -38,7 +39,6 @@ public class SuperState extends BearState{
             arm.getState().setState(arm.HOME);
             elevator.getState().setState(elevator.HOME);
             roller.getState().setState(roller.HOLD);
-            co.yield();
         }).named("SET SCORE");
     }
 
@@ -68,13 +68,12 @@ public class SuperState extends BearState{
     private Command run(){
         return Command.requiring(roller).executing(co -> {
             roller.getState().setState(roller.RUN);
-            co.yield();
         }).named("RUN");
     }
 
     public void configureTeleopState(){
         NEUTRAL.to(COLLECT).when(Pilot.intake():: getAsBoolean);
-        COLLECT.to(SCORE).when(Pilot.score():: getAsBoolean);
+        NEUTRAL.to(SCORE).when(Pilot.score():: getAsBoolean);
         SCORE.to(NEUTRAL).when(Pilot.score().negate():: getAsBoolean);
         COLLECT.to(NEUTRAL).when(Pilot.intake().negate():: getAsBoolean);
     }

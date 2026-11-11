@@ -35,9 +35,10 @@ public class BearState {
         // assign initial state
         currentState = states[0];
         // initialize state actions
-        for (State state: states) {
+        for (State state : states) {
             // execute current state
-            new Trigger(() -> currentState == state).whileTrue(state.action());
+            Command action = state.action();
+            new Trigger(() -> currentState == state).onTrue(action);
         }
         // run update in periodic
         Scheduler.getDefault().addPeriodic(this::update);
@@ -47,19 +48,20 @@ public class BearState {
      * Monitors transitions out of current state for state machine behavior.
      */
     protected void update() {
-            List<Transition> transitions = currentState.transitions();
-            for (Transition transition : transitions) {
-                // when transition condition is true, transition to goal
-                if (transition.condition().getAsBoolean()) {
-                    this.currentState = transition.goal();
-                    // return so no uneeded iterating
-                    return;
-                }
+        List<Transition> transitions = currentState.transitions();
+        for (Transition transition : transitions) {
+            // when transition condition is true, transition to goal
+            if (transition.condition().getAsBoolean()) {
+                this.currentState = transition.goal();
+                // return so no uneeded iterating
+                return;
+            }
         }
     }
 
     /**
-     * Sets the current state of the state machine.
+     * Sets the current state of the state machine. Thought of as entering a state,
+     * as state transistions can still occur and override it.
      */
     public void setState(State state) {
         this.currentState = state;
@@ -77,7 +79,7 @@ public class BearState {
     /**
      * The current/active state.
      */
-    public State getCurrent(){
+    public State getCurrent() {
         return this.currentState;
     }
 }
