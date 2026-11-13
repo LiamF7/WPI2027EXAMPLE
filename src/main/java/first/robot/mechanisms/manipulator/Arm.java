@@ -102,6 +102,7 @@ public class Arm extends BearMechanism {
         return Math.abs(getAngle() - Setpoint.FORWARD.angle.in(Degrees)) <= TOLERANCE;
     }
 
+    @Override
     public void log() {
         table.log("position", this.getAngle());
         table.log("out", this.isOut());
