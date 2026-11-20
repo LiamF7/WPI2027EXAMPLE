@@ -87,7 +87,7 @@ public class Roller extends BearMechanism {
     }
 
     /**
-     * Runs the Roller at a specifc rpm.
+     * Runs the Roller at a specific rpm.
      * 
      * @param rpm The specific rpm.
      * @return {@link Command}

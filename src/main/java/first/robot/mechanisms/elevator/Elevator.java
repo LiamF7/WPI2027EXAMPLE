@@ -93,7 +93,7 @@ public class Elevator implements Mechanism {
     /**
      * Runs the elevator to a specific setpoint as a {@link Setpoint}.
      * 
-     * @param setpoint The specifc setpoint
+     * @param setpoint The specific setpoint
      * @return {@link Command}
      */
     public Command goToSetpoint(Setpoint setpoint) {

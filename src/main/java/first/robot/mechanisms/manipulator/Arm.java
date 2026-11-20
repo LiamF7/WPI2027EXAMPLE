@@ -76,7 +76,7 @@ public class Arm extends BearMechanism {
     }
 
     /**
-     * Runs the arm to a specifc setpoint as a {@link Setpoint}.
+     * Runs the arm to a specific setpoint as a {@link Setpoint}.
      * 
      * @param setpoint the specific setpoint.
      * @return {@link Command}
