@@ -14,7 +14,7 @@ import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
 import first.bearlib.BearMechanism;
-import first.bearlib.statemachine.BearState;
+import first.bearlib.statemachine.BearMachine;
 import first.bearlib.statemachine.State;
 import lombok.Getter;
 
@@ -27,12 +27,12 @@ public class Arm extends BearMechanism {
     private final TelemetryTable table = Telemetry.getTable("Arm");
 
     @Getter
-    private final BearState state = new BearState();
+    private final BearMachine state = new BearMachine();
 
-    public final State HOME = new State("HOME", goToSetpoint(Setpoint.HOME)).withEnd(this::isAtHome);
-    public final State IDLE = new State("IDLE", this.idle());
-    public final State FORWARD = new State("FORWARD", this.goToSetpoint(Setpoint.FORWARD));
-    public final State BACK = new State("BACK", this.goToSetpoint(Setpoint.BACK));
+    public final State HOME = state.addState("HOME", goToSetpoint(Setpoint.HOME)).withEnd(this::isAtHome);
+    public final State IDLE = state.addState("IDLE", this.idle());
+    public final State FORWARD = state.addState("FORWARD", this.goToSetpoint(Setpoint.FORWARD));
+    public final State BACK = state.addState("BACK", this.goToSetpoint(Setpoint.BACK));
 
     /**
      * Setpoint for the arm, in rotations.
@@ -71,7 +71,7 @@ public class Arm extends BearMechanism {
         HOME.to(IDLE).onEnd();
 
         addConfig();
-        state.configure(IDLE, HOME, FORWARD, BACK);
+        state.start(IDLE);
         selfTestInit(SelfTestableType.POSITION_VOLTAGE, selfTestOutput, selfTestOutput, isOut(), 15.0);
     }
 

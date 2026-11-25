@@ -11,18 +11,22 @@ import first.bearlib.statemachine.Transition.NeedsConditionTransition;
  */
 public class State {
 
+    private final BearMachine machine;
     private final String name;
     private final Command action;
     private final ArrayList<Transition> transitions;
     private BooleanSupplier end;
 
     /**
-     * A simple action behavior for a mechanism.
+     * A simple action behavior for a mechanism. Created with
+     * {@link BearMachine#addState}.
      * 
-     * @param name   The name of the state.
-     * @param action The action/behavior associated.
+     * @param machine The state machine this state belongs to.
+     * @param name    The name of the state.
+     * @param action  The action/behavior associated.
      */
-    public State(String name, Command action) {
+    State(BearMachine machine, String name, Command action) {
+        this.machine = machine;
         this.name = name;
         this.action = action;
         this.transitions = new ArrayList<>();
@@ -34,7 +38,18 @@ public class State {
      * @param goal The goal {@link State}.
      */
     public NeedsConditionTransition to(State goal) {
+        if (goal.machine != this.machine) {
+            throw new IllegalArgumentException(
+                    this.name + " AND " + goal.name + " ARE IN DIFFERENT STATE MACHINES!!!");
+        }
         return new NeedsConditionTransition(this, goal);
+    }
+
+    /**
+     * The state machine this state belongs to.
+     */
+    BearMachine machine() {
+        return this.machine;
     }
 
     /**

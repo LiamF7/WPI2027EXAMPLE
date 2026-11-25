@@ -8,7 +8,7 @@ import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
 import first.bearlib.BearMechanism;
-import first.bearlib.statemachine.BearState;
+import first.bearlib.statemachine.BearMachine;
 import lombok.Getter;
 
 public class Climber extends BearMechanism {
@@ -18,7 +18,7 @@ public class Climber extends BearMechanism {
     private final TelemetryTable table = Telemetry.getTable("Climber");
 
     @Getter
-    private final BearState state = new BearState();
+    private final BearMachine state = new BearMachine();
 
     public Climber() {
         super("Climber", 2, new CANBus("Default Name"));

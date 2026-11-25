@@ -18,7 +18,7 @@ import com.ctre.phoenix6.signals.NeutralModeValue;
 
 import first.bearlib.BearMechanism;
 import first.bearlib.BearSim;
-import first.bearlib.statemachine.BearState;
+import first.bearlib.statemachine.BearMachine;
 import first.bearlib.statemachine.State;
 import lombok.Getter;
 
@@ -33,11 +33,11 @@ public class Elevator implements Mechanism {
     private final double tolerance = Rotations.of(0.2).in(Degrees);
 
     @Getter
-    private final BearState state = new BearState();
+    private final BearMachine state = new BearMachine();
 
-    public final State HOME = new State("HOME", this.goToSetpoint(Setpoint.HOME));
-    public final State MID = new State("MID", this.goToSetpoint(Setpoint.MID));
-    public final State HIGH = new State("HIGH", this.goToSetpoint(Setpoint.HIGH));
+    public final State HOME = state.addState("HOME", this.goToSetpoint(Setpoint.HOME));
+    public final State MID = state.addState("MID", this.goToSetpoint(Setpoint.MID));
+    public final State HIGH = state.addState("HIGH", this.goToSetpoint(Setpoint.HIGH));
 
     private ElevatorMechanismSim sim;
 
@@ -82,7 +82,7 @@ public class Elevator implements Mechanism {
 
         leader.addConfig();
         follower.cloneConfig(leader.getConfig());
-        state.configure(HOME, HIGH, MID);
+        state.start(HOME);
 
         if (RobotBase.isSimulation()) {
             sim = new ElevatorMechanismSim(leader.getMotor(), follower.getMotor());

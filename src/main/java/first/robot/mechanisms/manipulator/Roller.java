@@ -18,7 +18,7 @@ import com.ctre.phoenix6.signals.NeutralModeValue;
 
 import first.bearlib.BearMechanism;
 import first.bearlib.BearSim;
-import first.bearlib.statemachine.BearState;
+import first.bearlib.statemachine.BearMachine;
 import first.bearlib.statemachine.State;
 import first.robot.teleop.Pilot;
 import lombok.Getter;
@@ -32,12 +32,12 @@ public class Roller extends BearMechanism {
     private final TelemetryTable table = Telemetry.getTable("Roller");
 
     @Getter
-    private final BearState state = new BearState();
+    private final BearMachine state = new BearMachine();
 
-    public final State RUN = new State("RUN", runAtSpeed(1020));
-    public final State HOLD = new State("HOLD", runAtSpeed(0.0));
-    public final State SubLevel = new State("Sub", runAtSpeed(1020));
-    public final State REVERSE = new State("REVERSE", runAtSpeed(-1020));
+    public final State RUN = state.addState("RUN", runAtSpeed(1020));
+    public final State HOLD = state.addState("HOLD", runAtSpeed(0.0));
+    public final State SubLevel = state.addState("Sub", runAtSpeed(1020));
+    public final State REVERSE = state.addState("REVERSE", runAtSpeed(-1020));
 
     private RollerSim rollerSim;
 
@@ -63,7 +63,7 @@ public class Roller extends BearMechanism {
         RUN.to(SubLevel).when(()-> getVelocity() > 500);
 
         addConfig();
-        state.configure(HOLD, RUN, REVERSE);
+        state.start(HOLD);
 
         if(RobotBase.isSimulation()){
             rollerSim = new RollerSim(this.getMotor());
