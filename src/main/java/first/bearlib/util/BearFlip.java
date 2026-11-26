@@ -59,6 +59,19 @@ public class BearFlip {
     }
 
     /**
+     * Returns a {@link Rotation2d} mirrored based on alliance color. Mirroring
+     * across the center line maps a heading of θ to 180° - θ.
+     *
+     * @param rotation2d The initial Rotation2d to mirror.
+     * @return Rotation2d, mirroredRotation.
+     */
+    public static Rotation2d mirrorApply(Rotation2d rotation2d) {
+        Rotation2d mirrored = shouldFlip() ? new Rotation2d(-rotation2d.getCos(), rotation2d.getSin())
+                : rotation2d;
+        return mirrored;
+    }
+
+    /**
      * Returns a {@link Pose2d} flipped based on alliance color.
      * 
      * @param pose2d The initial Pose2d to flip.
@@ -77,7 +90,7 @@ public class BearFlip {
      * @return Pose2d, mirroredPose
      */
     public static Pose2d mirrorApply(Pose2d pose2d) {
-        Pose2d flipped = shouldFlip() ? new Pose2d(mirrorApply(pose2d.getTranslation()), apply(pose2d.getRotation()))
+        Pose2d flipped = shouldFlip() ? new Pose2d(mirrorApply(pose2d.getTranslation()), mirrorApply(pose2d.getRotation()))
                 : pose2d;
         return flipped;
     }

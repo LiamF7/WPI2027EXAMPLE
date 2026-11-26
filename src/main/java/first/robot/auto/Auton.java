@@ -27,12 +27,14 @@ public class Auton {
         // setup path builder
         pathBuilder = new Builder(DriveType.SWERVE, driveSubsystem, driveSubsystem::getPose, driveSubsystem::setPose,
                 driveSubsystem::getChassisVelocities, driveSubsystem::setChassisVelocities, new PIDController(0, 0, 0),
-                new PIDController(0, 0, 0), new PIDController(0, 0, 0));
+                new PIDController(0, 0, 0), new PIDController(0, 0, 0))
+                // checked each time a path starts, the alliance may not be known at boot
+                .withShouldFlip(BearFlip::shouldFlip);
 
         registerEventTriggers();
 
         // define paths
-        test = new Path("test").setFlipped(BearFlip.shouldFlip());  
+        test = new Path("test");
     }
 
     /**
